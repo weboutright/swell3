@@ -3,6 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+      // Suppress source map 404 errors in console
+      window.addEventListener('error', function(e) {
+        if (e.filename && e.filename.includes('.map')) {
+          e.preventDefault();
+        }
+      });
+    </script>
     <title>Swell Admin Dashboard - Complete Management Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -1126,6 +1134,13 @@
 
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz61JIlj9F-84byXh6OjxkM62prukzqJWSKyqhzw8DHliQRijPXmUzlgy14c9CPHfzzAA/exec';
 
+        function attemptAutoLogin() {
+            const redirectUrl = encodeURIComponent(window.location.href);
+            const loginUrl = `${GOOGLE_SCRIPT_URL}?action=login&redirectUrl=${redirectUrl}`;
+            console.log('Redirecting to login:', loginUrl);
+            window.location.href = loginUrl;
+        }
+
         function getSessionFromHash() {
             if (window.location.hash && window.location.hash.startsWith('#session=')) {
                 return window.location.hash.substring('#session='.length);
@@ -1135,6 +1150,10 @@
 
         async function fetchUserData() {
             const session = getSessionFromHash();
+            console.log('Session from hash/URL:', session);
+            console.log('Current URL:', window.location.href);
+            console.log('Current hash:', window.location.hash);
+
             if (!session) {
                 console.log('No session found. Attempting auto-login with Google...');
                 // Auto-login: Redirect to Google Apps Script to authenticate
@@ -1144,125 +1163,47 @@
 
             // Store session for persistence
             localStorage.setItem('swell_session', session);
+            console.log('Stored session in localStorage');
 
             try {
+                console.log('Fetching user data from:', `${GOOGLE_SCRIPT_URL}?action=getUserData&session=${session}`);
                 const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getUserData&session=${session}`);
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const userData = await response.json();
+                console.log('User data received:', userData);
 
-                if (userData && userData.email) {
-                    document.getElementById('user-name').textContent = userData.name || 'User';
-                    document.getElementById('user-email').textContent = userData.email;
-                    
+                if (userData && userData.success && userData.user) {
+                    document.getElementById('user-name').textContent = userData.user.name || 'User';
+                    document.getElementById('user-email').textContent = userData.user.email;
+
                     // Populate the admin email field with current logged-in user
-                    document.getElementById('admin-email').value = userData.email;
-                    document.getElementById('admin-email-display').textContent = userData.email;
-                    
-                    if (userData.picture) {
+                    document.getElementById('admin-email').value = userData.user.email;
+                    document.getElementById('admin-email-display').textContent = userData.user.email;
+
+                    if (userData.user.avatarUrl) {
                         const avatarImg = document.getElementById('user-avatar');
-                        avatarImg.src = userData.picture;
+                        avatarImg.src = userData.user.avatarUrl;
                         avatarImg.style.display = 'block';
                         document.getElementById('user-avatar-placeholder').style.display = 'none';
                     }
-                     // Add a logout button
-                    const userInfoDiv = document.querySelector('.sidebar .absolute.bottom-6');
-                    let logoutButton = document.getElementById('logout-button');
-                    if (!logoutButton) {
-                        logoutButton = document.createElement('button');
-                        logoutButton.id = 'logout-button';
-                        logoutButton.innerHTML = '<i data-lucide="log-out" class="w-4 h-4"></i>';
-                        logoutButton.className = 'absolute top-2 right-2 text-white/50 hover:text-white transition-colors';
-                        logoutButton.onclick = logout;
-                        const userBox = userInfoDiv.querySelector('.bg-white\\/10');
-                        userBox.classList.add('relative');
-                        userBox.appendChild(logoutButton);
-                        lucide.createIcons();
-                    }
-                    
-                    // Show success message for first-time users
-                    const isFirstLogin = !localStorage.getItem('swell_logged_in_before');
-                    if (isFirstLogin) {
-                        localStorage.setItem('swell_logged_in_before', 'true');
-                        showWelcomeMessage(userData.email);
-                    }
                 } else {
-                    throw new Error('Invalid user data received');
+                    console.error('Invalid user data:', userData);
                 }
             } catch (error) {
-                console.error('Failed to fetch user data:', error);
-                document.getElementById('user-name').textContent = 'Login Failed';
-                document.getElementById('user-email').textContent = 'Please try again';
-                localStorage.removeItem('swell_session');
-                
-                // Try auto-login again if session validation failed
-                setTimeout(() => {
-                    attemptAutoLogin();
-                }, 2000);
+                console.error('Error fetching user data:', error);
             }
-            // Clean the URL
-            history.pushState("", document.title, window.location.pathname + window.location.search);
-        }
-        
-        function attemptAutoLogin() {
-            console.log('Redirecting to Google authentication...');
-            // Keep the full URL including the path (admin.html)
-            const currentUrl = window.location.href.split('#')[0].replace(/\/+$/, '');
-            const loginUrl = `${GOOGLE_SCRIPT_URL}?action=login&redirectUrl=${encodeURIComponent(currentUrl)}`;
-            
-            console.log('Current URL:', currentUrl);
-            console.log('Login URL:', loginUrl);
-            
-            // Show loading state
-            document.getElementById('user-name').textContent = 'Logging in...';
-            document.getElementById('user-email').textContent = 'Authenticating with Google';
-            document.getElementById('admin-email-display').textContent = 'Authenticating...';
-            
-            // Redirect to login
-            window.location.href = loginUrl;
-        }
-        
-        function showWelcomeMessage(email) {
-            // Create welcome notification
-            const welcomeDiv = document.createElement('div');
-            welcomeDiv.className = 'fixed top-4 right-4 bg-emerald-500 text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-slide-in';
-            welcomeDiv.innerHTML = `
-                <div class="flex items-center space-x-3">
-                    <div class="flex-shrink-0">
-                        <i data-lucide="check-circle" class="w-6 h-6"></i>
-                    </div>
-                    <div>
-                        <p class="font-bold">Welcome to Swell Admin!</p>
-                        <p class="text-sm text-emerald-100">Logged in as ${email}</p>
-                    </div>
-                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white/80 hover:text-white">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>
-            `;
-            document.body.appendChild(welcomeDiv);
-            lucide.createIcons();
-            
-            // Auto-remove after 5 seconds
-            setTimeout(() => {
-                welcomeDiv.style.opacity = '0';
-                welcomeDiv.style.transform = 'translateX(100%)';
-                welcomeDiv.style.transition = 'all 0.3s ease';
-                setTimeout(() => welcomeDiv.remove(), 300);
-            }, 5000);
-        }
-        
-        function logout() {
-            localStorage.removeItem('swell_session');
-            window.location.href = 'index.html';
         }
 
-        // Run on page load
-        document.addEventListener('DOMContentLoaded', () => {
+        // Call fetchUserData on page load
+        window.onload = function() {
             initializeTimezone();
             fetchUserData();
-        });
+        }
     </script>
 </body>
 </html>
