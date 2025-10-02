@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features - Swell Booking: Complete Automation Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons for cleaner visuals -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
+            overflow-x: hidden;
+        }
+        
+        /* Premium gradient backgrounds */
+        .premium-gradient {
+            background: linear-gradient(135deg, #065f46 0%, #047857 50%, #059669 100%);
+        }
+        
+        .hero-gradient {
+            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 50%, #ecfdf5 100%);
+        }
+        
+        /* Define the enhanced color scheme */
+        .color-primary-dark { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); }
+        .color-primary-text { color: #047857; }
+        .color-primary-light-bg { 
+            background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); 
+            backdrop-filter: blur(10px);
+        }
+
+        /* Premium animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes shine {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        /* Enhanced feature cards with glass morphism */
+        .feature-card { 
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+            box-shadow: 0 25px 50px rgba(4, 120, 87, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Premium mockup styling */
+        .mockup-shadow { 
+            box-shadow: 0 40px 80px rgba(4, 120, 87, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+        }
+
+        /* Premium buttons with shine effect */
+        .btn-premium {
+            position: relative;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+
+        /* Typography enhancements */
+        .premium-heading {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #064e3b 0%, #047857 50%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Brand/Navigation specific font */
+        .brand-font {
+            font-family: 'Luckiest Guy', cursive;
+        }
+        
+        /* Fade in animation */
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+        }
+        
+        /* Staggered animation delays */
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-200 { animation-delay: 0.2s; }
+        .delay-300 { animation-delay: 0.3s; }
+        .delay-400 { animation-delay: 0.4s; }
+        
+        /* Premium glass effect for header */
+        .glass-header {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* Feature-specific styling */
+        .feature-hero {
+            background: linear-gradient(135deg, rgba(6, 95, 70, 0.95) 0%, rgba(4, 120, 87, 0.95) 100%);
+            backdrop-filter: blur(20px);
+        }
+
+        .feature-highlight {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .pricing-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .integration-card {
+            background: linear-gradient(135deg, rgba(249, 250, 251, 0.9) 0%, rgba(243, 244, 246, 0.8) 100%);
+            border: 2px solid rgba(16, 185, 129, 0.1);
+        }
+
+        /* Enhanced hover effects */
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Login Modal Styles */
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .login-button {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transition: all 0.3s ease;
+        }
+
+        .login-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px rgba(5, 150, 105, 0.3);
+        }
+
+        .google-login-btn {
+            background: linear-gradient(135deg, #4285f4 0%, #3367d6 100%);
+            transition: all 0.3s ease;
+        }
+
+        .google-login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 25px rgba(66, 133, 244, 0.3);
+        }
+    </style>
+</head>
+<body class="hero-gradient" onload="lucide.createIcons()">
+
+    <!-- Header Navigation -->
+    <header class="glass-header sticky top-0 z-50 shadow-xl">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <h1 class="text-3xl font-black brand-font tracking-tight text-emerald-800">Swell</h1>
+            <div class="space-x-6">
+                <a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec" class="text-gray-700 hover:text-emerald-600 font-medium transition duration-300 hover-lift">Home</a>
+                <a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=features" class="text-emerald-600 font-bold border-b-2 border-emerald-600">Features</a>
+                <a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=pricing" class="text-gray-700 hover:text-emerald-600 font-medium transition duration-300 hover-lift">Pricing</a>
+                <a href="#" onclick="openLoginModal()" class="premium-gradient text-white px-6 py-3 rounded-xl font-semibold hover:scale-105 transition duration-300 shadow-lg hover:shadow-xl">
+                    Login
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features Hero Section -->
+    <section class="pt-32 pb-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <div class="inline-flex items-center px-6 py-3 rounded-full pricing-badge text-white font-bold text-sm mb-8 shadow-lg">
+                    <i data-lucide="zap" class="w-4 h-4 mr-2"></i>
+                    100% FREE FOREVER
+                </div>
+                <h1 class="text-5xl md:text-7xl font-black premium-heading mb-6 fade-in-up">
+                    Powerful Features.<br/>
+                    <span class="feature-highlight">Zero Cost.</span>
+                </h1>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto fade-in-up delay-200">
+                    Everything you need to automate your booking process, manage payments, and delight customers - all in one comprehensive platform that costs absolutely nothing.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Features Grid -->
+    <section class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-black premium-heading mb-4">Core Features</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Professional-grade booking automation with enterprise features at zero cost
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Free Forever -->
+                <div class="feature-card p-8 rounded-3xl shadow-xl fade-in-up">
+                    <div class="w-16 h-16 premium-gradient rounded-2xl flex items-center justify-center mb-6">
+                        <i data-lucide="heart" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold premium-heading mb-4">Free Forever</h3>
+                    <p class="text-gray-600 leading-relaxed mb-6">
+                        No hidden fees, no premium plans, no subscription costs. Swell is completely free to use with all features unlocked from day one. Usage limits are based on Firebase's generous free tier, which is plenty for most users.
+                    </p>
+                    <div class="flex items-center text-emerald-600 font-semibold">
+                        <i data-lucide="check-circle" class="w-5 h-5 mr-2"></i>
+                        No credit card required
+                    </div>
+                </div>
+
+                <!-- Simple Setup -->
+                <div class="feature-card p-8 rounded-3xl shadow-xl fade-in-up delay-100">
+                    <div class="w-16 h-16 premium-gradient rounded-2xl flex items-center justify-center mb-6">
+                        <i data-lucide="zap" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold premium-heading mb-4">Simple Setup</h3>
+                    <p class="text-gray-600 leading-relaxed mb-6">
+                        Get up and running in under 5 minutes. Just connect your Google Calendar, add your payment link, and you're ready to accept bookings.
+                    </p>
+                    <div class="flex items-center text-emerald-600 font-semibold">
+                        <i data-lucide="clock" class="w-5 h-5 mr-2"></i>
+                        5-minute setup
+                    </div>
+                </div>
+
+                <!-- Google Calendar Integration -->
+                <div class="feature-card p-8 rounded-3xl shadow-xl fade-in-up delay-200">
+                    <div class="w-16 h-16 premium-gradient rounded-2xl flex items-center justify-center mb-6">
+                        <i data-lucide="calendar" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold premium-heading mb-4">Google Calendar Connected</h3>
+                    <p class="text-gray-600 leading-relaxed mb-6">
+                        Seamlessly syncs with your existing Google Calendar. Real-time availability checking and automatic event creation.
+                    </p>
+                    <div class="flex items-center text-emerald-600 font-semibold">
+                        <i data-lucide="sync" class="w-5 h-5 mr-2"></i>
+                        Real-time sync
+                    </div>
+                </div>
+
+                <!-- Email Automation -->
+                <div class="feature-card p-8 rounded-3xl shadow-xl fade-in-up delay-300">
+                    <div class="w-16 h-16 premium-gradient rounded-2xl flex items-center justify-center mb-6">
+                        <i data-lucide="mail" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold premium-heading mb-4">Email Automated</h3>
+                    <p class="text-gray-600 leading-relaxed mb-6">
+                        Instant confirmation emails to both you and your customers. Professional templates with booking details and meeting links.
+                    </p>
+                    <div class="flex items-center text-emerald-600 font-semibold">
+                        <i data-lucide="send" class="w-5 h-5 mr-2"></i>
+                        Instant delivery
+                    </div>
+                </div>
+
+                <!-- Admin Security -->
+                <div class="feature-card p-8 rounded-3xl shadow-xl fade-in-up delay-400">
+                    <div class="w-16 h-16 premium-gradient rounded-2xl flex items-center justify-center mb-6">
+                        <i data-lucide="shield-check" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold premium-heading mb-4">Protected by Gmail Login</h3>
+                    <p class="text-gray-600 leading-relaxed mb-6">
+                        Secure admin access protected by your Gmail account. Only you can access your booking management dashboard.
+                    </p>
+                    <div class="flex items-center text-emerald-600 font-semibold">
+                        <i data-lucide="lock" class="w-5 h-5 mr-2"></i>
+                        Google security
+                    </div>
+                </div>
+
+                <!-- Payment Integration -->
+                <div class="feature-card p-8 rounded-3xl shadow-xl fade-in-up delay-500">
+                    <div class="w-16 h-16 premium-gradient rounded-2xl flex items-center justify-center mb-6">
+                        <i data-lucide="credit-card" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold premium-heading mb-4">Stripe & Square Ready</h3>
+                    <p class="text-gray-600 leading-relaxed mb-6">
+                        Connect your existing Stripe or Square account for seamless payment processing. Secure checkout with professional invoicing.
+                    </p>
+                    <div class="flex items-center text-emerald-600 font-semibold">
+                        <i data-lucide="dollar-sign" class="w-5 h-5 mr-2"></i>
+                        Instant payments
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Advanced Features Section -->
+    <section class="py-20 feature-hero">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-black text-white mb-4">Advanced Automation</h2>
+                <p class="text-xl text-emerald-100 max-w-2xl mx-auto">
+                    Enterprise-level features that work automatically in the background
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <!-- Meeting Integration -->
+                <div class="space-y-8">
+                    <div class="bg-white/10 backdrop-blur-lg p-8 rounded-3xl border border-white/20">
+                        <div class="flex items-start space-x-6">
+                            <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i data-lucide="video" class="w-6 h-6 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white mb-3">Google Meet & Zoom Integration</h3>
+                                <p class="text-emerald-100 leading-relaxed">
+                                    Automatically generates and sends Google Meet or Zoom meeting links with every booking. Your customers receive everything they need instantly.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/10 backdrop-blur-lg p-8 rounded-3xl border border-white/20">
+                        <div class="flex items-start space-x-6">
+                            <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i data-lucide="bell" class="w-6 h-6 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white mb-3">Instant Email Automation</h3>
+                                <p class="text-emerald-100 leading-relaxed">
+                                    Both you and your customer receive professional confirmation emails within seconds of booking, with all meeting details and calendar invites.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white/10 backdrop-blur-lg p-8 rounded-3xl border border-white/20">
+                        <div class="flex items-start space-x-6">
+                            <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                <i data-lucide="settings" class="w-6 h-6 text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-white mb-3">Simple Admin Panel</h3>
+                                <p class="text-emerald-100 leading-relaxed">
+                                    Manage your calendar, bookings, and payment settings from one beautiful dashboard. No technical skills required.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visual Mockup -->
+                <div class="text-center">
+                    <div class="mockup-shadow p-8 rounded-3xl">
+                        <div class="space-y-6">
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                        <i data-lucide="calendar-check" class="w-4 h-4 text-green-600"></i>
+                                    </div>
+                                    <span class="font-semibold text-gray-800">New Booking Confirmed</span>
+                                </div>
+                                <span class="text-sm text-gray-500">2 min ago</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <i data-lucide="mail" class="w-4 h-4 text-blue-600"></i>
+                                    </div>
+                                    <span class="font-semibold text-gray-800">Emails Sent</span>
+                                </div>
+                                <span class="text-sm text-green-600 font-semibold">✓ Complete</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                        <i data-lucide="video" class="w-4 h-4 text-purple-600"></i>
+                                    </div>
+                                    <span class="font-semibold text-gray-800">Meeting Link Generated</span>
+                                </div>
+                                <span class="text-sm text-green-600 font-semibold">✓ Complete</span>
+                            </div>
+                            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                                        <i data-lucide="dollar-sign" class="w-4 h-4 text-yellow-600"></i>
+                                    </div>
+                                    <span class="font-semibold text-gray-800">Payment Processed</span>
+                                </div>
+                                <span class="text-sm text-green-600 font-semibold">✓ Complete</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Integration Partners -->
+    <section class="py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-black premium-heading mb-4">Seamless Integrations</h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Works perfectly with the tools you already use
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div class="integration-card p-8 rounded-2xl text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-xl flex items-center justify-center">
+                        <i data-lucide="calendar" class="w-8 h-8 text-blue-600"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-800 mb-2">Google Calendar</h3>
+                    <p class="text-sm text-gray-600">Real-time sync</p>
+                </div>
+
+                <div class="integration-card p-8 rounded-2xl text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-purple-100 rounded-xl flex items-center justify-center">
+                        <i data-lucide="credit-card" class="w-8 h-8 text-purple-600"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-800 mb-2">Stripe</h3>
+                    <p class="text-sm text-gray-600">Payment processing</p>
+                </div>
+
+                <div class="integration-card p-8 rounded-2xl text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-xl flex items-center justify-center">
+                        <i data-lucide="square" class="w-8 h-8 text-green-600"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-800 mb-2">Square</h3>
+                    <p class="text-sm text-gray-600">Point of sale</p>
+                </div>
+
+                <div class="integration-card p-8 rounded-2xl text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-xl flex items-center justify-center">
+                        <i data-lucide="video" class="w-8 h-8 text-red-600"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-800 mb-2">Google Meet</h3>
+                    <p class="text-sm text-gray-600">Video meetings</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section class="py-20">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="feature-card p-12 rounded-3xl shadow-2xl">
+                <div class="inline-flex items-center px-6 py-3 rounded-full pricing-badge text-white font-bold text-sm mb-8 shadow-lg">
+                    <i data-lucide="star" class="w-4 h-4 mr-2"></i>
+                    COMPLETELY FREE
+                </div>
+                <h2 class="text-4xl md:text-5xl font-black premium-heading mb-6">
+                    Ready to Automate Your Bookings?
+                </h2>
+                <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+                    Set up your professional booking system in under 5 minutes. No cost, no complexity, just results.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=admin" class="btn-premium px-8 py-4 text-white font-bold rounded-xl shadow-lg text-lg inline-flex items-center justify-center">
+                        <i data-lucide="rocket" class="w-5 h-5 mr-3"></i>
+                        Start Free Setup
+                    </a>
+                    <a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec" class="border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-8 py-4 font-bold rounded-xl transition-colors text-lg inline-flex items-center justify-center">
+                        <i data-lucide="arrow-left" class="w-5 h-5 mr-3"></i>
+                        Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Premium Footer -->
+    <footer class="premium-gradient py-16 relative">
+        <div class="absolute inset-0 bg-black/20"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+                <div class="col-span-1 md:col-span-2">
+                    <h3 class="text-2xl font-bold text-white mb-4 brand-font">Swell</h3>
+                    <p class="text-emerald-100 mb-6 max-w-md">
+                        The completely free automation platform that transforms how modern businesses handle bookings and payments. No subscriptions, no hidden fees, forever.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition duration-300">
+                            <i data-lucide="twitter" class="w-5 h-5 text-white"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition duration-300">
+                            <i data-lucide="linkedin" class="w-5 h-5 text-white"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition duration-300">
+                            <i data-lucide="github" class="w-5 h-5 text-white"></i>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-4">Product</h4>
+                    <ul class="space-y-2 text-emerald-100">
+                        <li><a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=features" class="hover:text-white transition duration-300">Features</a></li>
+                        <li><a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=pricing" class="hover:text-white transition duration-300">Pricing</a></li>
+                        <li><a href="#" class="hover:text-white transition duration-300">API Docs</a></li>
+                        <li><a href="#" class="hover:text-white transition duration-300">Integrations</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-white mb-4">Support</h4>
+                    <ul class="space-y-2 text-emerald-100">
+                        <li><a href="#" class="hover:text-white transition duration-300">Help Center</a></li>
+                        <li><a href="#" class="hover:text-white transition duration-300">Contact Us</a></li>
+                        <li><a href="#" class="hover:text-white transition duration-300">Status Page</a></li>
+                        <li><a href="#" class="hover:text-white transition duration-300">Community</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-white/20 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-emerald-200 text-sm">
+                    &copy; 2025 Swell - Free Forever. All rights reserved.
+                </p>
+                <div class="flex space-x-6 mt-4 md:mt-0">
+                    <a href="#" class="text-emerald-200 hover:text-white text-sm transition duration-300">Privacy Policy</a>
+                    <a href="#" class="text-emerald-200 hover:text-white text-sm transition duration-300">Terms of Service</a>
+                    <a href="#" class="text-emerald-200 hover:text-white text-sm transition duration-300">Cookies</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 z-50 hidden modal-overlay flex items-center justify-center p-4">
+        <div class="modal-content max-w-md w-full rounded-3xl shadow-2xl p-8 relative">
+            <!-- Close Button -->
+            <button onclick="closeLoginModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition duration-300">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-black premium-heading mb-2">Welcome to Swell</h2>
+                <p class="text-gray-600">Sign in with your Google account to access your booking dashboard</p>
+            </div>
+
+            <!-- Google Login Only -->
+            <div class="space-y-6">
+                <!-- Google Login -->
+                <button onclick="loginWithGoogle()" class="w-full google-login-btn text-white py-4 px-6 rounded-xl font-semibold shadow-lg flex items-center justify-center space-x-3 text-lg">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    <span>Continue with Google</span>
+                </button>
+
+                <!-- Security Notice -->
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                    <div class="flex items-start space-x-3">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-emerald-600 mt-0.5"></i>
+                        <div>
+                            <h4 class="font-semibold text-emerald-800 mb-1">Secure Google Authentication</h4>
+                            <p class="text-sm text-emerald-700">
+                                Swell uses Google's secure authentication system. Your Google account credentials are never stored on our servers.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-8 text-center">
+                <p class="text-sm text-gray-600">
+                    New to Swell? Your Google account will automatically create your admin dashboard.
+                </p>
+                <p class="text-xs text-gray-500 mt-4">
+                    By continuing, you agree to our Terms of Service and Privacy Policy
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Login Modal Functions
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            // Re-initialize icons for the modal
+            setTimeout(() => lucide.createIcons(), 100);
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function loginWithGoogle() {
+            // Redirect to Google Apps Script deployment for authentication
+            closeLoginModal();
+            window.location.href = 'https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=admin';
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('loginModal');
+            if (event.target === modal) {
+                closeLoginModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeLoginModal();
+            }
+        });
+    </script>
+
+</body>
+</html>
