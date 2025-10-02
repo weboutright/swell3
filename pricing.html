@@ -672,9 +672,13 @@
         }
 
         function loginWithGoogle() {
-            // Redirect to Google Apps Script for authentication
             closeLoginModal();
-            window.location.href = GOOGLE_SCRIPT_URL + '?page=admin';
+            // Construct the redirect URL to point to admin.html
+            const redirectUrl = window.location.origin + window.location.pathname.replace('pricing.html', 'admin.html');
+            // Construct the authentication URL with action and redirectUrl
+            const authUrl = `${GOOGLE_SCRIPT_URL}?action=login&redirectUrl=${encodeURIComponent(redirectUrl)}`;
+            // Redirect to the authentication URL
+            window.location.href = authUrl;
         }
 
         // Close modal when clicking outside
