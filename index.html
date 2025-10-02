@@ -202,7 +202,7 @@
                 <a href="index.html" class="text-emerald-600 font-bold border-b-2 border-emerald-600">Home</a>
                 <a href="features.html" class="text-gray-700 hover:text-emerald-600 font-medium transition duration-300 hover-lift">Features</a>
                 <a href="pricing.html" class="text-gray-700 hover:text-emerald-600 font-medium transition duration-300 hover-lift">Pricing</a>
-                <a href="admin.html" class="premium-gradient text-white px-6 py-3 rounded-xl font-semibold hover:scale-105 transition duration-300 shadow-lg hover:shadow-xl">
+                <a href="#" onclick="loginToAdmin()" class="premium-gradient text-white px-6 py-3 rounded-xl font-semibold hover:scale-105 transition duration-300 shadow-lg hover:shadow-xl">
                     Login
                 </a>
             </div>
@@ -539,6 +539,15 @@
     </div>
 
     <script>
+        // Google Apps Script API URL - UPDATE THIS WITH YOUR DEPLOYMENT URL
+        const GOOGLE_SCRIPT_URL = 'YOUR_GOOGLE_SCRIPT_URL_HERE';
+        
+        // Login to admin function
+        function loginToAdmin() {
+            // Redirect to Google Apps Script for authentication
+            window.location.href = GOOGLE_SCRIPT_URL + '?page=admin';
+        }
+        
         // Login Modal Functions
         function openLoginModal() {
             document.getElementById('loginModal').classList.remove('hidden');
@@ -553,9 +562,9 @@
         }
 
         function loginWithGoogle() {
-            // Redirect to admin page for authentication
+            // Redirect to Google Apps Script for authentication
             closeLoginModal();
-            window.location.href = 'admin.html';
+            window.location.href = GOOGLE_SCRIPT_URL + '?page=admin';
         }
 
         // Close modal when clicking outside
