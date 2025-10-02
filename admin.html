@@ -1124,7 +1124,7 @@
             document.getElementById('payment-type-label').textContent = label;
         }
 
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec';
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz61JIlj9F-84byXh6OjxkM62prukzqJWSKyqhzw8DHliQRijPXmUzlgy14c9CPHfzzAA/exec';
 
         function getSessionFromHash() {
             if (window.location.hash && window.location.hash.startsWith('#session=')) {
@@ -1207,8 +1207,12 @@
         
         function attemptAutoLogin() {
             console.log('Redirecting to Google authentication...');
-            const currentUrl = window.location.href.split('#')[0]; // Remove any hash
+            // Keep the full URL including the path (admin.html)
+            const currentUrl = window.location.href.split('#')[0].replace(/\/+$/, '');
             const loginUrl = `${GOOGLE_SCRIPT_URL}?action=login&redirectUrl=${encodeURIComponent(currentUrl)}`;
+            
+            console.log('Current URL:', currentUrl);
+            console.log('Login URL:', loginUrl);
             
             // Show loading state
             document.getElementById('user-name').textContent = 'Logging in...';
