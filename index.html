@@ -199,10 +199,10 @@
         <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             <h1 class="text-3xl font-black brand-font tracking-tight text-emerald-800">Swell</h1>
             <div class="space-x-6">
-                <a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec" class="text-emerald-600 font-bold border-b-2 border-emerald-600">Home</a>
-                <a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=features" class="text-gray-700 hover:text-emerald-600 font-medium transition duration-300 hover-lift">Features</a>
-                <a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=pricing" class="text-gray-700 hover:text-emerald-600 font-medium transition duration-300 hover-lift">Pricing</a>
-                <a href="#" onclick="openLoginModal()" class="premium-gradient text-white px-6 py-3 rounded-xl font-semibold hover:scale-105 transition duration-300 shadow-lg hover:shadow-xl">
+                <a href="index.html" class="text-emerald-600 font-bold border-b-2 border-emerald-600">Home</a>
+                <a href="features.html" class="text-gray-700 hover:text-emerald-600 font-medium transition duration-300 hover-lift">Features</a>
+                <a href="pricing.html" class="text-gray-700 hover:text-emerald-600 font-medium transition duration-300 hover-lift">Pricing</a>
+                <a href="admin.html" class="premium-gradient text-white px-6 py-3 rounded-xl font-semibold hover:scale-105 transition duration-300 shadow-lg hover:shadow-xl">
                     Login
                 </a>
             </div>
@@ -553,9 +553,9 @@
         }
 
         function loginWithGoogle() {
-            // Redirect to Google Apps Script deployment for authentication
+            // Redirect to admin page for authentication
             closeLoginModal();
-            window.location.href = 'https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=admin';
+            window.location.href = 'admin.html';
         }
 
         // Close modal when clicking outside

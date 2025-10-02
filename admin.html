@@ -437,29 +437,29 @@
                         <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i data-lucide="calendar-check" class="w-6 h-6 text-green-600"></i>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-1">12</h3>
+                        <h3 id="stat-bookings" class="text-2xl font-bold text-gray-900 mb-1">0</h3>
                         <p class="text-gray-600">Bookings This Week</p>
                     </div>
                     <div class="admin-card p-6 rounded-2xl text-center">
                         <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i data-lucide="dollar-sign" class="w-6 h-6 text-blue-600"></i>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-1">$2,388</h3>
+                        <h3 id="stat-revenue" class="text-2xl font-bold text-gray-900 mb-1">$0</h3>
                         <p class="text-gray-600">Revenue This Week</p>
                     </div>
                     <div class="admin-card p-6 rounded-2xl text-center">
                         <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i data-lucide="trending-up" class="w-6 h-6 text-purple-600"></i>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-1">+23%</h3>
-                        <p class="text-gray-600">Growth vs Last Week</p>
+                        <h3 id="stat-average" class="text-2xl font-bold text-gray-900 mb-1">$0</h3>
+                        <p class="text-gray-600">Average Booking Value</p>
                     </div>
                     <div class="admin-card p-6 rounded-2xl text-center">
                         <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i data-lucide="clock" class="w-6 h-6 text-yellow-600"></i>
                         </div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-1">45min</h3>
-                        <p class="text-gray-600">Avg Session Length</p>
+                        <h3 id="stat-period" class="text-2xl font-bold text-gray-900 mb-1">7 days</h3>
+                        <p class="text-gray-600">Tracking Period</p>
                     </div>
                 </div>
 
@@ -1140,8 +1140,69 @@
             return true;
         }
 
+        // Load configuration from backend
+        async function loadConfiguration() {
+            try {
+                const response = await fetch(window.location.origin + window.location.pathname, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'getConfiguration' })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.config) {
+                    const config = data.config;
+                    
+                    // Populate form fields
+                    if (config.calendarId) document.getElementById('calendar-id').value = config.calendarId;
+                    if (config.adminEmail) document.getElementById('admin-email').value = config.adminEmail;
+                    if (config.basePaymentLink) document.getElementById('base-payment-link').value = config.basePaymentLink;
+                    if (config.paymentProcessor) document.getElementById('payment-processor-type').value = config.paymentProcessor;
+                    
+                    // Load business hours
+                    if (config.businessHours && Object.keys(config.businessHours).length > 0) {
+                        loadBusinessHoursFromConfig(config.businessHours);
+                    }
+                    
+                    // Load holidays
+                    if (config.holidays && config.holidays.length > 0) {
+                        holidays = config.holidays;
+                        renderHolidays();
+                    }
+                    
+                    // Load services
+                    if (config.services && config.services.length > 0) {
+                        services = config.services;
+                    }
+                    
+                    console.log('Configuration loaded successfully');
+                } else {
+                    console.warn('No configuration found or error:', data.error);
+                }
+            } catch (error) {
+                console.error('Error loading configuration:', error);
+            }
+        }
+
+        // Helper function to load business hours from config
+        function loadBusinessHoursFromConfig(businessHours) {
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            days.forEach(day => {
+                if (businessHours[day]) {
+                    const enabled = businessHours[day].enabled;
+                    const start = businessHours[day].start;
+                    const end = businessHours[day].end;
+                    
+                    document.getElementById(`${day}-enabled`).checked = enabled;
+                    document.getElementById(`${day}-start`).value = start;
+                    document.getElementById(`${day}-end`).value = end;
+                }
+            });
+        }
+
         // Save configuration with comprehensive data collection
-        function saveConfiguration() {
+        async function saveConfiguration() {
             if (!validateConfiguration()) return;
             
             const configData = {
@@ -1155,24 +1216,55 @@
                 timestamp: new Date().toISOString()
             };
 
-            // This is where you'll integrate with your Google Apps Script
-            console.log('Configuration Data for .gs integration:', configData);
-            
-            // Show success message
-            showSuccessMessage('Configuration saved successfully!');
-            
-            // Here you would call your Google Apps Script function:
-            // google.script.run.saveConfiguration(configData);
+            try {
+                const response = await fetch(window.location.origin + window.location.pathname, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'saveConfiguration',
+                        config: configData
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccessMessage('Configuration saved successfully!');
+                    console.log('Configuration saved to backend');
+                } else {
+                    showErrorMessage('Failed to save configuration: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error saving configuration:', error);
+                showErrorMessage('Error saving configuration: ' + error.message);
+            }
         }
 
         // Save business hours
-        function saveBusinessHours() {
+        async function saveBusinessHours() {
             const businessHours = getBusinessHours();
-            console.log('Business Hours Data:', businessHours);
-            showSuccessMessage('Business hours saved successfully!');
             
-            // Here you would call your Google Apps Script function:
-            // google.script.run.saveBusinessHours(businessHours);
+            try {
+                const response = await fetch(window.location.origin + window.location.pathname, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'saveBusinessHours',
+                        businessHours: businessHours
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccessMessage('Business hours saved successfully!');
+                } else {
+                    showErrorMessage('Failed to save business hours: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error saving business hours:', error);
+                showErrorMessage('Error saving business hours: ' + error.message);
+            }
         }
 
         // Success message helper
@@ -1198,6 +1290,28 @@
             setTimeout(() => {
                 notification.remove();
             }, 3000);
+        }
+
+        // Error message helper
+        function showErrorMessage(message) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-red-100 text-red-800 px-6 py-4 rounded-xl shadow-lg z-50 border-2 border-red-200';
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <i data-lucide="alert-circle" class="w-5 h-5 mr-3"></i>
+                    ${message}
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
         }
 
         // Deployment & Embed Functions
@@ -1239,9 +1353,9 @@
         function loadUserInfo() {
             try {
                 // Try to get email from template variable first
-                const templateEmail = '<?!= userEmail ?>';
+                const templateEmail = '<?= userEmail ?>';
                 
-                if (templateEmail && templateEmail !== '<?!= userEmail ?>') {
+                if (templateEmail && templateEmail !== '<?= userEmail ?>' && templateEmail.includes('@')) {
                     // We have the email from the server
                     const userEmail = templateEmail;
                     
@@ -1280,9 +1394,53 @@
                         avatar.src = googlePhotoUrl;
                     }
                 } else {
-                    // Fallback if no email from template
-                    document.getElementById('user-name').textContent = 'Admin User';
-                    document.getElementById('user-email').textContent = 'Administrator';
+                    // Fallback if no email from template - try to get from config
+                    console.log('Template email not found, fetching from configuration...');
+                    
+                    // Make API call to get admin email
+                    fetch(window.location.origin + window.location.pathname, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'getConfiguration' })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.config && data.config.adminEmail) {
+                            const userEmail = data.config.adminEmail;
+                            
+                            // Extract name from email
+                            let userName = userEmail.split('@')[0];
+                            userName = userName.replace(/[._-]/g, ' ')
+                                .split(' ')
+                                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                                .join(' ');
+                            
+                            document.getElementById('user-name').textContent = userName;
+                            document.getElementById('user-email').textContent = userEmail;
+                            
+                            // Update avatar
+                            const googlePhotoUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&size=40&background=10b981&color=fff&bold=true`;
+                            const avatar = document.getElementById('user-avatar');
+                            const placeholder = document.getElementById('user-avatar-placeholder');
+                            
+                            if (avatar && placeholder) {
+                                avatar.onload = function() {
+                                    placeholder.style.display = 'none';
+                                    avatar.style.display = 'block';
+                                };
+                                avatar.src = googlePhotoUrl;
+                            }
+                        } else {
+                            // Final fallback
+                            document.getElementById('user-name').textContent = 'Admin User';
+                            document.getElementById('user-email').textContent = 'Administrator';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Failed to fetch admin email:', error);
+                        document.getElementById('user-name').textContent = 'Admin User';
+                        document.getElementById('user-email').textContent = 'Administrator';
+                    });
                 }
             } catch (error) {
                 console.error('Error loading user info:', error);
@@ -1316,42 +1474,98 @@
         // Calendar Functions
         let currentCalendarDate = new Date();
         let calendarView = 'month';
-        let calendarBookings = [
-            // Sample bookings data - in production this would come from Google Calendar API
-            {
-                id: 1,
-                title: '30-Min Consultation - John Doe',
-                date: new Date(2025, 0, 15, 10, 0), // Jan 15, 2025, 10:00 AM
-                duration: 30,
-                status: 'confirmed',
-                customer: 'John Doe',
-                email: 'john@example.com',
-                service: '30-Min Consultation',
-                price: 50
-            },
-            {
-                id: 2,
-                title: '1-Hour Session - Jane Smith',
-                date: new Date(2025, 0, 15, 14, 0), // Jan 15, 2025, 2:00 PM
-                duration: 60,
-                status: 'confirmed',
-                customer: 'Jane Smith',
-                email: 'jane@example.com',
-                service: '1-Hour Session',
-                price: 100
-            },
-            {
-                id: 3,
-                title: '2-Hour Workshop - Bob Johnson',
-                date: new Date(2025, 0, 18, 9, 0), // Jan 18, 2025, 9:00 AM
-                duration: 120,
-                status: 'pending',
-                customer: 'Bob Johnson',
-                email: 'bob@example.com',
-                service: '2-Hour Workshop',
-                price: 180
+        let calendarBookings = [];
+
+        // Load bookings from Google Calendar via API
+        async function loadCalendarBookings() {
+            try {
+                const startDate = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1);
+                const endDate = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0);
+                
+                const response = await fetch(window.location.origin + window.location.pathname, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'getBookings',
+                        filters: {
+                            startDate: startDate.toISOString(),
+                            endDate: endDate.toISOString()
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.bookings) {
+                    // Transform bookings to match calendar format
+                    calendarBookings = data.bookings.map(booking => ({
+                        id: booking.id,
+                        title: booking.title,
+                        date: new Date(booking.start),
+                        endDate: new Date(booking.end),
+                        duration: Math.round((new Date(booking.end) - new Date(booking.start)) / 60000),
+                        status: 'confirmed',
+                        description: booking.description,
+                        location: booking.location,
+                        guests: booking.guests
+                    }));
+                    
+                    renderCalendar();
+                    console.log('Loaded ' + calendarBookings.length + ' bookings from calendar');
+                } else {
+                    console.error('Failed to load bookings:', data.error);
+                    calendarBookings = [];
+                }
+            } catch (error) {
+                console.error('Error loading calendar bookings:', error);
+                calendarBookings = [];
             }
-        ];
+        }
+
+        // Load analytics data from API
+        async function loadAnalytics() {
+            try {
+                // Get last 7 days of data
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - 7);
+                
+                const response = await fetch(window.location.origin + window.location.pathname, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'getAnalytics',
+                        startDate: startDate.toISOString(),
+                        endDate: endDate.toISOString()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.analytics) {
+                    const analytics = data.analytics;
+                    
+                    // Update stat cards
+                    document.getElementById('stat-bookings').textContent = analytics.totalBookings || 0;
+                    document.getElementById('stat-revenue').textContent = '$' + (analytics.totalRevenue || 0).toFixed(0);
+                    document.getElementById('stat-average').textContent = '$' + (analytics.averageBookingValue || 0).toFixed(0);
+                    
+                    console.log('Loaded analytics:', analytics);
+                } else {
+                    console.error('Failed to load analytics:', data.error);
+                    // Set default values
+                    document.getElementById('stat-bookings').textContent = '0';
+                    document.getElementById('stat-revenue').textContent = '$0';
+                    document.getElementById('stat-average').textContent = '$0';
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                // Set default values
+                document.getElementById('stat-bookings').textContent = '0';
+                document.getElementById('stat-revenue').textContent = '$0';
+                document.getElementById('stat-average').textContent = '$0';
+            }
+        }
 
         function renderCalendar() {
             updateCalendarHeader();
@@ -1594,7 +1808,7 @@
             } else {
                 currentCalendarDate.setDate(currentCalendarDate.getDate() - 1);
             }
-            renderCalendar();
+            loadCalendarBookings(); // Reload bookings for new date range
         }
 
         function nextCalendarMonth() {
@@ -1605,12 +1819,12 @@
             } else {
                 currentCalendarDate.setDate(currentCalendarDate.getDate() + 1);
             }
-            renderCalendar();
+            loadCalendarBookings(); // Reload bookings for new date range
         }
 
         function goToToday() {
             currentCalendarDate = new Date();
-            renderCalendar();
+            loadCalendarBookings(); // Reload bookings for current month
         }
 
         function changeCalendarView() {
@@ -1686,6 +1900,11 @@
             
             // Load user information
             loadUserInfo();
+            
+            // Load real data from backend
+            loadConfiguration();
+            loadCalendarBookings();
+            loadAnalytics();
             
             console.log('Admin panel initialization complete');
         });

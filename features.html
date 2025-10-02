@@ -177,10 +177,10 @@
         <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
             <h1 class="text-3xl font-black brand-font tracking-tight text-emerald-800">Swell</h1>
             <div class="space-x-6">
-                <a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec" class="text-gray-700 hover:text-emerald-600 font-medium transition duration-300 hover-lift">Home</a>
-                <a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=features" class="text-emerald-600 font-bold border-b-2 border-emerald-600">Features</a>
-                <a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=pricing" class="text-gray-700 hover:text-emerald-600 font-medium transition duration-300 hover-lift">Pricing</a>
-                <a href="#" onclick="openLoginModal()" class="premium-gradient text-white px-6 py-3 rounded-xl font-semibold hover:scale-105 transition duration-300 shadow-lg hover:shadow-xl">
+                <a href="index.html" class="text-gray-700 hover:text-emerald-600 font-medium transition duration-300 hover-lift">Home</a>
+                <a href="features.html" class="text-emerald-600 font-bold border-b-2 border-emerald-600">Features</a>
+                <a href="pricing.html" class="text-gray-700 hover:text-emerald-600 font-medium transition duration-300 hover-lift">Pricing</a>
+                <a href="admin.html" class="premium-gradient text-white px-6 py-3 rounded-xl font-semibold hover:scale-105 transition duration-300 shadow-lg hover:shadow-xl">
                     Login
                 </a>
             </div>
@@ -474,11 +474,11 @@
                     Set up your professional booking system in under 5 minutes. No cost, no complexity, just results.
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=admin" class="btn-premium px-8 py-4 text-white font-bold rounded-xl shadow-lg text-lg inline-flex items-center justify-center">
+                    <a href="admin.html" class="btn-premium px-8 py-4 text-white font-bold rounded-xl shadow-lg text-lg inline-flex items-center justify-center">
                         <i data-lucide="rocket" class="w-5 h-5 mr-3"></i>
                         Start Free Setup
                     </a>
-                    <a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec" class="border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-8 py-4 font-bold rounded-xl transition-colors text-lg inline-flex items-center justify-center">
+                    <a href="index.html" class="border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 px-8 py-4 font-bold rounded-xl transition-colors text-lg inline-flex items-center justify-center">
                         <i data-lucide="arrow-left" class="w-5 h-5 mr-3"></i>
                         Back to Home
                     </a>
@@ -512,8 +512,8 @@
                 <div>
                     <h4 class="text-lg font-semibold text-white mb-4">Product</h4>
                     <ul class="space-y-2 text-emerald-100">
-                        <li><a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=features" class="hover:text-white transition duration-300">Features</a></li>
-                        <li><a href="https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=pricing" class="hover:text-white transition duration-300">Pricing</a></li>
+                        <li><a href="features.html" class="hover:text-white transition duration-300">Features</a></li>
+                        <li><a href="pricing.html" class="hover:text-white transition duration-300">Pricing</a></li>
                         <li><a href="#" class="hover:text-white transition duration-300">API Docs</a></li>
                         <li><a href="#" class="hover:text-white transition duration-300">Integrations</a></li>
                     </ul>
@@ -610,9 +610,9 @@
         }
 
         function loginWithGoogle() {
-            // Redirect to Google Apps Script deployment for authentication
+            // Redirect to admin page
             closeLoginModal();
-            window.location.href = 'https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec?page=admin';
+            window.location.href = 'admin.html';
         }
 
         // Close modal when clicking outside
