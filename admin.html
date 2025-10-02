@@ -1166,8 +1166,17 @@
             console.log('Stored session in localStorage');
 
             try {
-                console.log('Fetching user data from:', `${GOOGLE_SCRIPT_URL}?action=getUserData&session=${session}`);
-                const response = await fetch(`${GOOGLE_SCRIPT_URL}?action=getUserData&session=${session}`);
+                console.log('Fetching user data from:', GOOGLE_SCRIPT_URL, 'with token:', session);
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'getUserData',
+                        token: session
+                    })
+                });
                 console.log('Response status:', response.status);
                 console.log('Response ok:', response.ok);
 
