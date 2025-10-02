@@ -649,6 +649,15 @@
     </div>
 
     <script>
+        // Google Apps Script API URL - UPDATE THIS WITH YOUR DEPLOYMENT URL
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx512SHOPUcFr96maIOp02h-pK9bGvHlVMkAXJ7xLgl8v7FipD_BAHNBpBrofXBC61MVw/exec';
+        
+        // Login to admin function
+        function loginToAdmin() {
+            // Redirect to Google Apps Script for authentication
+            window.location.href = GOOGLE_SCRIPT_URL + '?page=admin';
+        }
+        
         // Login Modal Functions
         function openLoginModal() {
             document.getElementById('loginModal').classList.remove('hidden');
@@ -663,9 +672,9 @@
         }
 
         function loginWithGoogle() {
-            // Redirect to Google Apps Script deployment for authentication
+            // Redirect to Google Apps Script for authentication
             closeLoginModal();
-            window.location.href = "admin.html";
+            window.location.href = GOOGLE_SCRIPT_URL + '?page=admin';
         }
 
         // Close modal when clicking outside
