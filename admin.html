@@ -1146,7 +1146,7 @@
             addEventListeners();
             
             // Show default section
-            showSection('dashboard', document.querySelector('.sidebar-link'));
+            showSection('system-config', document.querySelector('.sidebar-link'));
         }
         
         // ========================================================================
@@ -1274,24 +1274,21 @@
         
         function showSection(sectionId, element) {
             // Hide all sections
-            document.querySelectorAll('main > section').forEach(section => {
-                section.style.display = 'none';
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.classList.add('hidden');
             });
             
             // Show the target section
             const targetSection = document.getElementById(sectionId);
             if (targetSection) {
-                targetSection.style.display = 'block';
+                targetSection.classList.remove('hidden');
             }
             
             // Update active link in sidebar
-            document.querySelectorAll('.sidebar-link').forEach(link => {
-                link.classList.remove('bg-green-100', 'text-green-800', 'font-semibold');
+            document.querySelectorAll('.sidebar-item').forEach(link => {
+                link.classList.remove('active');
             });
-            element.classList.add('bg-green-100', 'text-green-800', 'font-semibold');
-            
-            // Update header title
-            document.getElementById('header-title').textContent = element.textContent.trim();
+            element.classList.add('active');
         }
         
         // ========================================================================
