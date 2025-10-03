@@ -854,6 +854,13 @@
                         registerBtn.innerHTML = originalBtnText;
                         lucide.createIcons();
                     }
+                } else if (result.success && result.apiKey) {
+                    // Success with API key
+                    showNotification('✅ Account registered successfully! Your API key has been generated.', 'success');
+                    localStorage.setItem('swell_user_gmail', gmail);
+                    localStorage.setItem('swell_api_key', result.apiKey);
+                    localStorage.setItem('swell_deployment_url', codeGsUrl);
+                    goToStep(5);
                 } else {
                     // Assume success if we got HTML back
                     showNotification('✅ Account registered successfully!', 'success');

@@ -601,8 +601,11 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    // Redirect to admin dashboard
-                    window.location.href = 'admin.html?deploymentUrl=' + encodeURIComponent(result.codeGsUrl);
+                    // Redirect to admin dashboard with deployment URL, Gmail, and API key
+                    const redirectUrl = 'admin.html?deploymentUrl=' + encodeURIComponent(result.codeGsUrl) + 
+                                       '&gmail=' + encodeURIComponent(gmail) + 
+                                       (result.apiKey ? '&apiKey=' + encodeURIComponent(result.apiKey) : '');
+                    window.location.href = redirectUrl;
                 } else {
                     errorDiv.textContent = result.error || 'Gmail not found. Please sign up first.';
                     errorDiv.classList.remove('hidden');
