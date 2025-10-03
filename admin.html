@@ -1164,9 +1164,20 @@
 
         function getSessionFromHash() {
             if (window.location.hash && window.location.hash.startsWith('#session=')) {
-                return window.location.hash.substring('#session='.length);
+                const token = window.location.hash.substring('#session='.length);
+                console.log('Found session token in URL hash:', token ? 'YES' : 'NO');
+                // Clean the URL hash after extracting the token
+                if (token) {
+                    localStorage.setItem('swell_session', token);
+                    console.log('Saved token to localStorage');
+                    // Remove the hash from URL for cleaner appearance
+                    history.replaceState(null, null, window.location.pathname);
+                }
+                return token;
             }
-            return localStorage.getItem('swell_session');
+            const stored = localStorage.getItem('swell_session');
+            console.log('Checking localStorage for token:', stored ? 'FOUND' : 'NOT FOUND');
+            return stored;
         }
 
         async function fetchUserData() {
