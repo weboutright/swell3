@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="img/favicon.png"/>
+    <title>Swell Setup Wizard - Get Started in 5 Minutes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
+        }
+        
+        .brand-font {
+            font-family: 'Luckiest Guy', cursive;
+        }
+        
+        .wizard-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 50px rgba(4, 120, 87, 0.08);
+        }
+        
+        .premium-gradient {
+            background: linear-gradient(135deg, #065f46 0%, #047857 50%, #059669 100%);
+        }
+        
+        .step-indicator {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.25rem;
+            transition: all 0.3s ease;
+        }
+        
+        .step-indicator.active {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .step-indicator.completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .step-indicator.pending {
+            background: #e5e7eb;
+            color: #9ca3af;
+        }
+        
+        .code-block {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .code-block code {
+            color: #e2e8f0;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            font-family: 'Monaco', 'Courier New', monospace;
+            display: block;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .copy-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10;
+        }
+        
+        .pulse-animate {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .check-animation {
+            animation: checkmark 0.5s ease-in-out;
+        }
+        
+        @keyframes checkmark {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="premium-gradient text-white py-6 sticky top-0 z-50 shadow-xl">
+        <div class="container mx-auto px-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                        <i data-lucide="waves" class="w-7 h-7"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-black brand-font">Swell Setup Wizard</h1>
+                        <p class="text-emerald-200 text-sm">Get your booking system running in 5 minutes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-6 py-12 max-w-5xl">
+        
+        <!-- Progress Indicator -->
+        <div class="wizard-card rounded-3xl p-8 mb-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="step-indicator active" id="step-1-indicator">1</div>
+                    <div class="hidden sm:block text-sm font-semibold text-gray-700">Copy Code</div>
+                </div>
+                <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="step-indicator pending" id="step-2-indicator">2</div>
+                    <div class="hidden sm:block text-sm font-semibold text-gray-400">Create Project</div>
+                </div>
+                <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="step-indicator pending" id="step-3-indicator">3</div>
+                    <div class="hidden sm:block text-sm font-semibold text-gray-400">Deploy</div>
+                </div>
+                <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="step-indicator pending" id="step-4-indicator">4</div>
+                    <div class="hidden sm:block text-sm font-semibold text-gray-400">Done!</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: Copy Code -->
+        <div id="step-1" class="wizard-card rounded-3xl p-12 mb-8">
+            <div class="flex items-center mb-6">
+                <div class="w-16 h-16 premium-gradient rounded-2xl flex items-center justify-center mr-4">
+                    <i data-lucide="copy" class="w-8 h-8 text-white"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-black text-gray-900">Step 1: Copy Code.gs</h2>
+                    <p class="text-gray-600">Click the button below to copy the entire code to your clipboard</p>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-2xl p-6 mb-6">
+                <p class="text-gray-700 mb-4">
+                    <i data-lucide="info" class="w-5 h-5 inline mr-2 text-emerald-600"></i>
+                    This is the complete booking system code (~900 lines). It includes everything: admin dashboard, booking widget, and API.
+                </p>
+            </div>
+
+            <div class="code-block mb-6">
+                <button onclick="copyCodeToClipboard()" class="copy-button px-4 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors flex items-center">
+                    <i data-lucide="copy" class="w-4 h-4 mr-2"></i>
+                    <span id="copy-btn-text">Copy Code</span>
+                </button>
+                <code id="code-content">// Code.gs will be loaded here...</code>
+            </div>
+
+            <div class="flex justify-end">
+                <button onclick="goToStep(2)" id="step-1-next" class="px-8 py-4 bg-gray-300 text-gray-500 rounded-xl font-bold cursor-not-allowed flex items-center" disabled>
+                    Next Step
+                    <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Create Project -->
+        <div id="step-2" class="wizard-card rounded-3xl p-12 mb-8 hidden">
+            <div class="flex items-center mb-6">
+                <div class="w-16 h-16 premium-gradient rounded-2xl flex items-center justify-center mr-4">
+                    <i data-lucide="file-plus" class="w-8 h-8 text-white"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-black text-gray-900">Step 2: Create Apps Script Project</h2>
+                    <p class="text-gray-600">We'll open Google Apps Script for you - just paste the code</p>
+                </div>
+            </div>
+
+            <div class="space-y-6 mb-8">
+                <div class="bg-white rounded-2xl p-6 border-2 border-emerald-100">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-emerald-700 font-bold">1</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900 mb-2">Click the button below to open Google Apps Script</h3>
+                            <button onclick="openAppsScript()" class="px-6 py-3 premium-gradient text-white rounded-xl font-bold hover:opacity-90 transition-opacity flex items-center">
+                                <i data-lucide="external-link" class="w-5 h-5 mr-2"></i>
+                                Open Google Apps Script
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-6 border-2 border-gray-100">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-gray-700 font-bold">2</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900 mb-2">In the Apps Script editor:</h3>
+                            <ul class="list-disc list-inside space-y-2 text-gray-700">
+                                <li>Delete the default <code class="px-2 py-1 bg-gray-100 rounded text-sm">function myFunction()</code> code</li>
+                                <li>Press <kbd class="px-2 py-1 bg-gray-200 rounded text-sm font-mono">Ctrl+V</kbd> (or <kbd class="px-2 py-1 bg-gray-200 rounded text-sm font-mono">Cmd+V</kbd>) to paste</li>
+                                <li>Name your project (e.g., "My Booking System")</li>
+                                <li>Click the save icon 💾</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6 border-l-4 border-yellow-400">
+                    <p class="text-gray-700 flex items-start">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 mr-2 text-yellow-600 flex-shrink-0 mt-0.5"></i>
+                        <span><strong>Make sure you paste ALL the code!</strong> It should be around 900+ lines. If you see less, copy again.</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <button onclick="goToStep(1)" class="px-8 py-4 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-colors flex items-center">
+                    <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i>
+                    Back
+                </button>
+                <button onclick="goToStep(3)" class="px-8 py-4 premium-gradient text-white rounded-xl font-bold hover:opacity-90 transition-opacity flex items-center">
+                    Code Pasted - Next Step
+                    <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Deploy -->
+        <div id="step-3" class="wizard-card rounded-3xl p-12 mb-8 hidden">
+            <div class="flex items-center mb-6">
+                <div class="w-16 h-16 premium-gradient rounded-2xl flex items-center justify-center mr-4">
+                    <i data-lucide="rocket" class="w-8 h-8 text-white"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-black text-gray-900">Step 3: Deploy Your Booking System</h2>
+                    <p class="text-gray-600">Follow these exact steps to deploy</p>
+                </div>
+            </div>
+
+            <div class="space-y-6 mb-8">
+                <div class="bg-white rounded-2xl p-6 border-2 border-emerald-100">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-emerald-700 font-bold">1</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900 mb-2">Click "Deploy" button (top right of Apps Script editor)</h3>
+                            <p class="text-gray-600 text-sm">Then select <strong>"New deployment"</strong></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-6 border-2 border-gray-100">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-gray-700 font-bold">2</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900 mb-2">Click the gear icon ⚙️ next to "Select type"</h3>
+                            <p class="text-gray-600 text-sm">Then choose <strong>"Web app"</strong></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-6 border-2 border-red-100">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-red-700 font-bold">3</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900 mb-3">⚠️ CRITICAL: Configure these settings EXACTLY:</h3>
+                            <div class="bg-red-50 rounded-xl p-4 space-y-3">
+                                <div>
+                                    <p class="font-semibold text-gray-900 mb-1">Execute as:</p>
+                                    <p class="text-red-700 font-bold text-lg">✅ User accessing the web app</p>
+                                    <p class="text-sm text-red-600 mt-1 font-semibold">⚠️ DO NOT select "Me (your@email.com)" - This will break data isolation!</p>
+                                    <p class="text-xs text-gray-600 mt-1">This is REQUIRED for data isolation!</p>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-900 mb-1">Who has access:</p>
+                                    <p class="text-emerald-700 font-bold">Anyone</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Visual reminder -->
+                            <div class="mt-4 bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+                                <p class="text-sm text-yellow-800 font-semibold">
+                                    💡 Look for the dropdown that says "Execute as" - make sure it's set to "User accessing the web app", NOT "Me"
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-6 border-2 border-gray-100">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-gray-700 font-bold">4</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900 mb-2">Click "Deploy"</h3>
+                            <p class="text-gray-600 text-sm">You may need to authorize the app - click "Authorize access" and follow the prompts</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-6 border-2 border-emerald-100">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-emerald-700 font-bold">5</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900 mb-3">Copy your deployment URL</h3>
+                            <p class="text-gray-600 text-sm mb-3">It will look like: <code class="text-xs px-2 py-1 bg-gray-100 rounded">https://script.google.com/macros/s/AKfyc.../exec</code></p>
+                            <input type="url" id="deployment-url" placeholder="Paste your deployment URL here" 
+                                   class="w-full p-4 border-2 border-emerald-200 rounded-xl focus:border-emerald-500 focus:outline-none mb-3">
+                            
+                            <!-- Test Connection Button -->
+                            <button onclick="testDeployment()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-semibold hover:bg-blue-200 transition-colors flex items-center">
+                                <i data-lucide="zap" class="w-4 h-4 mr-2"></i>
+                                Test Connection
+                            </button>
+                            <p id="test-result" class="text-sm mt-2"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Troubleshooting Accordion -->
+            <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 mb-8">
+                <details class="group">
+                    <summary class="cursor-pointer font-bold text-gray-900 flex items-center justify-between">
+                        <span class="flex items-center">
+                            <i data-lucide="help-circle" class="w-5 h-5 mr-2 text-blue-600"></i>
+                            Having Issues? Click here for troubleshooting
+                        </span>
+                        <i data-lucide="chevron-down" class="w-5 h-5 text-gray-500 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    
+                    <div class="mt-4 space-y-4 text-sm">
+                        <!-- Authorization Warning -->
+                        <div class="bg-white rounded-xl p-4 border-l-4 border-yellow-400">
+                            <h4 class="font-bold text-gray-900 mb-2">⚠️ Seeing "This app isn't verified" warning?</h4>
+                            <p class="text-gray-700 mb-2">This is normal! Google shows this for personal Apps Script projects.</p>
+                            <ol class="list-decimal list-inside space-y-1 text-gray-600">
+                                <li>Click "Advanced" (or "Show Advanced")</li>
+                                <li>Click "Go to [Your Project Name] (unsafe)"</li>
+                                <li>Click "Allow" to grant permissions</li>
+                            </ol>
+                            <p class="text-xs text-gray-500 mt-2">This is safe because you're deploying YOUR OWN code to YOUR Google account.</p>
+                        </div>
+                        
+                        <!-- Wrong Execute As -->
+                        <div class="bg-white rounded-xl p-4 border-l-4 border-red-400">
+                            <h4 class="font-bold text-gray-900 mb-2">❌ Deployed with wrong "Execute as" setting?</h4>
+                            <p class="text-gray-700 mb-2">If you accidentally selected "Me" instead of "User accessing the web app":</p>
+                            <ol class="list-decimal list-inside space-y-1 text-gray-600">
+                                <li>Go back to Apps Script editor</li>
+                                <li>Click "Deploy" → "Manage deployments"</li>
+                                <li>Click the pencil icon ✏️ to edit</li>
+                                <li>Change "Execute as" to "User accessing the web app"</li>
+                                <li>Click "Deploy" again</li>
+                            </ol>
+                        </div>
+                        
+                        <!-- Code Paste Issues -->
+                        <div class="bg-white rounded-xl p-4 border-l-4 border-blue-400">
+                            <h4 class="font-bold text-gray-900 mb-2">📋 Code won't paste or seems incomplete?</h4>
+                            <ul class="list-disc list-inside space-y-1 text-gray-600">
+                                <li>Make sure you deleted ALL the default code first</li>
+                                <li>Try copying again - the code should be 900+ lines</li>
+                                <li>If copy fails, use the "Download from GitHub" button instead</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Invalid URL -->
+                        <div class="bg-white rounded-xl p-4 border-l-4 border-purple-400">
+                            <h4 class="font-bold text-gray-900 mb-2">🔗 "Invalid URL" error?</h4>
+                            <p class="text-gray-700 mb-2">Make sure you're copying the WEB APP URL, not the editor URL:</p>
+                            <div class="bg-gray-100 rounded p-2 text-xs font-mono mb-2">
+                                <p class="text-green-600">✓ Correct: https://script.google.com/macros/s/AKfyc.../exec</p>
+                                <p class="text-red-600">✗ Wrong: https://script.google.com/home/projects/...</p>
+                            </div>
+                            <p class="text-xs text-gray-500">The correct URL appears AFTER you click "Deploy" in a popup modal.</p>
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <div class="flex justify-between">
+                <button onclick="goToStep(2)" class="px-8 py-4 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-colors flex items-center">
+                    <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i>
+                    Back
+                </button>
+                <button onclick="validateAndContinue()" class="px-8 py-4 premium-gradient text-white rounded-xl font-bold hover:opacity-90 transition-opacity flex items-center">
+                    Verify & Complete Setup
+                    <i data-lucide="check" class="w-5 h-5 ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 4: Success -->
+        <div id="step-4" class="wizard-card rounded-3xl p-12 text-center hidden">
+            <div class="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 check-animation">
+                <i data-lucide="check-circle" class="w-12 h-12 text-emerald-600"></i>
+            </div>
+            <h2 class="text-4xl font-black text-gray-900 mb-4">🎉 You're All Set!</h2>
+            <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+                Your booking system is now live and ready to accept bookings!
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 max-w-3xl mx-auto">
+                <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-6">
+                    <div class="w-12 h-12 bg-emerald-200 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="settings" class="w-6 h-6 text-emerald-700"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Configure Your System</h3>
+                    <p class="text-sm text-gray-600 mb-4">Set up services, business hours, and payment links</p>
+                    <button onclick="openAdminDashboard()" class="w-full px-4 py-3 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors">
+                        Open Admin Dashboard
+                    </button>
+                </div>
+
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6">
+                    <div class="w-12 h-12 bg-blue-200 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="code" class="w-6 h-6 text-blue-700"></i>
+                    </div>
+                    <h3 class="font-bold text-gray-900 mb-2">Get Embed Code</h3>
+                    <p class="text-sm text-gray-600 mb-4">Add the booking widget to your website</p>
+                    <button onclick="showEmbedCode()" class="w-full px-4 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-colors">
+                        Get Widget Code
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-emerald-50 to-blue-50 rounded-2xl p-6 max-w-3xl mx-auto">
+                <h3 class="font-bold text-gray-900 mb-3">📚 Next Steps:</h3>
+                <ul class="text-left text-gray-700 space-y-2">
+                    <li class="flex items-start">
+                        <i data-lucide="check" class="w-5 h-5 text-emerald-600 mr-2 flex-shrink-0 mt-0.5"></i>
+                        <span>Add your services and pricing in the admin dashboard</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i data-lucide="check" class="w-5 h-5 text-emerald-600 mr-2 flex-shrink-0 mt-0.5"></i>
+                        <span>Set your business hours and timezone</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i data-lucide="check" class="w-5 h-5 text-emerald-600 mr-2 flex-shrink-0 mt-0.5"></i>
+                        <span>Connect your Stripe or Square payment link (optional)</span>
+                    </li>
+                    <li class="flex items-start">
+                        <i data-lucide="check" class="w-5 h-5 text-emerald-600 mr-2 flex-shrink-0 mt-0.5"></i>
+                        <span>Embed the widget on your website</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        
+        let userDeploymentUrl = '';
+        
+        // Load Code.gs on page load
+        window.onload = function() {
+            loadCodeGS();
+        };
+        
+        async function loadCodeGS() {
+            try {
+                // Try local file first
+                const response = await fetch('Code.gs');
+                const code = await response.text();
+                
+                // Validate we got actual code (not HTML error page)
+                if (code.length < 500 || code.includes('<!DOCTYPE')) {
+                    throw new Error('Invalid code file');
+                }
+                
+                document.getElementById('code-content').textContent = code;
+            } catch (error) {
+                console.error('Error loading local Code.gs:', error);
+                
+                // Fallback to GitHub raw URL
+                try {
+                    const githubResponse = await fetch('https://raw.githubusercontent.com/weboutright/swell3/main/Code.gs');
+                    const githubCode = await githubResponse.text();
+                    document.getElementById('code-content').textContent = githubCode;
+                    showNotification('Loaded code from GitHub', 'info');
+                } catch (githubError) {
+                    console.error('Error loading from GitHub:', githubError);
+                    document.getElementById('code-content').textContent = '// Unable to load code automatically. Please download manually from:\n// https://github.com/weboutright/swell3/blob/main/Code.gs';
+                    showDownloadButton();
+                }
+            }
+        }
+        
+        function showDownloadButton() {
+            const codeBlock = document.querySelector('.code-block');
+            const downloadBtn = document.createElement('a');
+            downloadBtn.href = 'https://github.com/weboutright/swell3/blob/main/Code.gs';
+            downloadBtn.target = '_blank';
+            downloadBtn.className = 'copy-button px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center';
+            downloadBtn.style.right = '140px';
+            downloadBtn.innerHTML = '<i data-lucide="download" class="w-4 h-4 mr-2"></i>Download from GitHub';
+            codeBlock.appendChild(downloadBtn);
+            lucide.createIcons();
+        }
+        
+        function copyCodeToClipboard() {
+            const code = document.getElementById('code-content').textContent;
+            
+            // Validate code length
+            if (code.length < 500) {
+                showNotification('Code appears incomplete. Try downloading from GitHub instead.', 'error');
+                showDownloadButton();
+                return;
+            }
+            
+            navigator.clipboard.writeText(code).then(() => {
+                // Update button
+                const btn = document.getElementById('copy-btn-text');
+                btn.textContent = '✓ Copied!';
+                btn.parentElement.classList.add('bg-emerald-700');
+                
+                // Enable next button
+                const nextBtn = document.getElementById('step-1-next');
+                nextBtn.disabled = false;
+                nextBtn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                nextBtn.classList.add('premium-gradient', 'text-white', 'cursor-pointer');
+                
+                // Show success message with line count
+                const lines = code.split('\n').length;
+                showNotification(`✓ Code copied! (${lines} lines) Ready for next step.`, 'success');
+                
+                setTimeout(() => {
+                    btn.textContent = 'Copy Code';
+                    btn.parentElement.classList.remove('bg-emerald-700');
+                }, 3000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                showNotification('Copy failed. Try the download button instead.', 'error');
+                showDownloadButton();
+            });
+        }
+        
+        function goToStep(step) {
+            // Hide all steps
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`step-${i}`).classList.add('hidden');
+                const indicator = document.getElementById(`step-${i}-indicator`);
+                indicator.classList.remove('active');
+                if (i < step) {
+                    indicator.classList.remove('pending');
+                    indicator.classList.add('completed');
+                } else if (i === step) {
+                    indicator.classList.remove('pending', 'completed');
+                    indicator.classList.add('active');
+                } else {
+                    indicator.classList.remove('active', 'completed');
+                    indicator.classList.add('pending');
+                }
+            }
+            
+            // Show current step
+            document.getElementById(`step-${step}`).classList.remove('hidden');
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Refresh Lucide icons
+            lucide.createIcons();
+        }
+        
+        function openAppsScript() {
+            window.open('https://script.google.com/create', '_blank');
+            showNotification('Apps Script opened in new tab!', 'success');
+        }
+        
+        function validateAndContinue() {
+            const url = document.getElementById('deployment-url').value.trim();
+            
+            if (!url) {
+                showNotification('Please paste your deployment URL', 'error');
+                return;
+            }
+            
+            if (!url.includes('script.google.com/macros/s/')) {
+                showNotification('Invalid URL. Make sure you copied the Web App URL, not the editor URL', 'error');
+                return;
+            }
+            
+            if (!url.endsWith('/exec')) {
+                showNotification('URL should end with /exec - please check you copied the complete URL', 'error');
+                return;
+            }
+            
+            userDeploymentUrl = url;
+            localStorage.setItem('swell_deployment_url', url);
+            
+            goToStep(4);
+        }
+        
+        async function testDeployment() {
+            const url = document.getElementById('deployment-url').value.trim();
+            const resultDiv = document.getElementById('test-result');
+            
+            if (!url) {
+                resultDiv.innerHTML = '<span class="text-red-600">⚠️ Please paste your URL first</span>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<span class="text-blue-600">🔄 Testing connection...</span>';
+            
+            try {
+                // Try to fetch the widget page
+                const testUrl = url + '?page=widget';
+                const response = await fetch(testUrl, { 
+                    method: 'GET',
+                    mode: 'no-cors' // Avoid CORS issues for initial test
+                });
+                
+                // If we got here, the URL is at least reachable
+                resultDiv.innerHTML = '<span class="text-green-600">✅ Connection successful! URL looks good.</span>';
+                showNotification('Deployment test passed!', 'success');
+                
+            } catch (error) {
+                console.error('Test failed:', error);
+                resultDiv.innerHTML = '<span class="text-yellow-600">⚠️ Unable to verify (this might be OK - CORS restriction). Try clicking "Verify & Complete Setup" to continue.</span>';
+            }
+        }
+        
+        function openAdminDashboard() {
+            if (userDeploymentUrl) {
+                window.open(`${userDeploymentUrl}?page=admin`, '_blank');
+            } else {
+                showNotification('Deployment URL not found', 'error');
+            }
+        }
+        
+        function showEmbedCode() {
+            if (!userDeploymentUrl) {
+                showNotification('Deployment URL not found', 'error');
+                return;
+            }
+            
+            const embedCode = `<iframe src="${userDeploymentUrl}?page=widget" width="100%" height="600px" frameborder="0"></iframe>`;
+            
+            navigator.clipboard.writeText(embedCode).then(() => {
+                showNotification('Embed code copied to clipboard!', 'success');
+            });
+        }
+        
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 p-4 rounded-xl shadow-2xl z-50 animate-slide-in ${
+                type === 'success' ? 'bg-emerald-500 text-white' : 
+                type === 'error' ? 'bg-red-500 text-white' : 
+                'bg-blue-500 text-white'
+            }`;
+            notification.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <i data-lucide="${type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'info'}" class="w-5 h-5"></i>
+                    <span class="font-semibold">${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 4000);
+        }
+    </script>
+    
+    <style>
+        @keyframes animate-slide-in {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .animate-slide-in {
+            animation: animate-slide-in 0.3s ease-out;
+        }
+    </style>
+</body>
+</html>

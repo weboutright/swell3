@@ -920,7 +920,7 @@
                             </div>
                         </div>
                         <div class="bg-gray-900 p-6 rounded-xl mb-4 overflow-x-auto">
-                            <pre class="text-sm text-gray-200 font-mono" id="iframe-code"><span class="text-pink-400">&lt;iframe</span> <span class="text-blue-300">src</span>=<span class="text-green-300">"https://your-booking-widget.com/embed"</span> <span class="text-blue-300">width</span>=<span class="text-green-300">"100%"</span> <span class="text-blue-300">height</span>=<span class="text-green-300">"600"</span> <span class="text-blue-300">frameborder</span>=<span class="text-green-300">"0"</span><span class="text-pink-400">&gt;&lt;/iframe&gt;</span></pre>
+                            <pre class="text-sm text-gray-200 font-mono" id="iframe-code">&lt;iframe src="LOADING..." width="100%" height="600" frameborder="0"&gt;&lt;/iframe&gt;</pre>
                         </div>
                         <button onclick="copyToClipboard('iframe-code')" class="btn-premium px-4 py-2 text-white rounded-lg font-semibold text-sm">
                             <i data-lucide="copy" class="w-4 h-4 mr-2 inline"></i>
@@ -940,8 +940,7 @@
                             </div>
                         </div>
                         <div class="bg-gray-900 p-6 rounded-xl mb-4 overflow-x-auto">
-                            <pre class="text-sm text-gray-200 font-mono leading-relaxed" id="js-code"><span class="text-pink-400">&lt;button</span> <span class="text-blue-300">id</span>=<span class="text-green-300">"swell-booking-modal-btn"</span><span class="text-pink-400">&gt;</span>Book a Session<span class="text-pink-400">&lt;/button&gt;</span>
-<span class="text-pink-400">&lt;script&gt;</span><span class="text-gray-400">// See below for full script code to copy</span><span class="text-pink-400">&lt;/script&gt;</span></pre>
+                            <pre class="text-sm text-gray-200 font-mono" id="wp-code">Loading...</pre>
                         </div>
                         <button onclick="copyToClipboard('js-code')" class="btn-premium px-4 py-2 text-white rounded-lg font-semibold text-sm">
                             <i data-lucide="copy" class="w-4 h-4 mr-2 inline"></i>
@@ -981,7 +980,7 @@
                             </div>
                         </div>
                         <div class="bg-gray-900 p-6 rounded-xl mb-4 overflow-x-auto">
-                            <pre class="text-sm text-blue-300 font-mono" id="link-code">https://book.swellbooking.com/your-business-id</pre>
+                            <pre class="text-sm text-blue-300 font-mono" id="link-code">Loading...</pre>
                         </div>
                         <div class="flex space-x-3">
                             <button onclick="copyToClipboard('link-code')" class="btn-premium px-4 py-2 text-white rounded-lg font-semibold text-sm">
@@ -1154,6 +1153,45 @@
         }
 
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz61JIlj9F-84byXh6OjxkM62prukzqJWSKyqhzw8DHliQRijPXmUzlgy14c9CPHfzzAA/exec';
+        
+        // Generate widget URL for current user
+        function getWidgetUrl() {
+            return GOOGLE_SCRIPT_URL + '?page=widget';
+        }
+        
+        // Update all embed codes with correct URLs
+        function updateEmbedCodes() {
+            const widgetUrl = getWidgetUrl();
+            const width = document.getElementById('widget-width')?.value || '100%';
+            const height = document.getElementById('widget-height')?.value || '600px';
+            
+            // Update iframe code
+            const iframeCode = `<iframe src="${widgetUrl}" width="${width}" height="${height}" frameborder="0"></iframe>`;
+            document.getElementById('iframe-code').textContent = iframeCode;
+            
+            // Update direct link
+            document.getElementById('link-code').textContent = widgetUrl;
+            
+            // Update WordPress shortcode
+            const wpCode = `[swell_booking url="${widgetUrl}" width="${width}" height="${height}"]`;
+            document.getElementById('wp-code').textContent = wpCode;
+            
+            showNotification('Embed codes updated!', 'success');
+        }
+        
+        // Copy to clipboard function
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+            
+            const text = element.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Copied to clipboard!', 'success');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                showNotification('Failed to copy', 'error');
+            });
+        }
 
         function attemptAutoLogin() {
             const redirectUrl = encodeURIComponent(window.location.href);
@@ -1163,63 +1201,231 @@
         }
 
         function getSessionFromHash() {
-            return localStorage.getItem('swell_session');
+            console.log('=== GET SESSION FROM HASH ===');
+            console.log('window.location.hash:', window.location.hash);
+            console.log('window.location.href:', window.location.href);
+            
+            if (window.location.hash && window.location.hash.startsWith('#session=')) {
+                const token = window.location.hash.substring('#session='.length);
+                console.log('✅ Found session token in URL hash');
+                console.log('Token length:', token ? token.length : 0);
+                console.log('Token (first 30 chars):', token ? token.substring(0, 30) + '...' : 'EMPTY');
+                
+                // Clean the URL hash after extracting the token
+                if (token) {
+                    localStorage.setItem('swell_session', token);
+                    console.log('✅ Saved token to localStorage');
+                    // Remove the hash from URL for cleaner appearance
+                    history.replaceState(null, null, window.location.pathname);
+                    console.log('✅ Cleaned URL hash');
+                }
+                return token;
+            }
+            
+            const stored = localStorage.getItem('swell_session');
+            console.log('Checking localStorage for token:', stored ? 'FOUND' : 'NOT FOUND');
+            if (stored) {
+                console.log('Token from localStorage (first 30 chars):', stored.substring(0, 30) + '...');
+            }
+            return stored;
         }
 
         async function fetchUserData() {
             const session = getSessionFromHash();
+            console.log('=== FETCH USER DATA DEBUG ===');
+            console.log('Session from hash/URL:', session);
+            console.log('Current URL:', window.location.href);
+            console.log('Current hash:', window.location.hash);
+            console.log('LocalStorage token:', localStorage.getItem('swell_session'));
 
             if (!session) {
+                console.log('❌ No session found. Attempting auto-login with Google...');
+                // Auto-login: Redirect to Google Apps Script to authenticate
                 attemptAutoLogin();
                 return;
             }
 
+            // Store session for persistence
+            localStorage.setItem('swell_session', session);
+            console.log('✅ Stored session in localStorage');
+
             try {
+                console.log('📡 Fetching user data from:', GOOGLE_SCRIPT_URL);
+                console.log('Token (first 20 chars):', session.substring(0, 20) + '...');
+                
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'getUserData', token: session })
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'getUserData',
+                        token: session
+                    })
                 });
+                
+                console.log('📥 Response status:', response.status);
+                console.log('📥 Response ok:', response.ok);
+                console.log('📥 Response headers:', [...response.headers.entries()]);
 
                 if (!response.ok) {
-                    throw new Error('HTTP error! status: ' + response.status);
+                    const errorText = await response.text();
+                    console.error('❌ HTTP error response body:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
                 }
                 
-                const userData = await response.json();
+                const responseText = await response.text();
+                console.log('📥 Raw response text:', responseText);
+                
+                const userData = JSON.parse(responseText);
+                console.log('✅ User data parsed:', userData);
 
                 if (userData && userData.success && userData.user) {
+                    console.log('✅ Valid user data, updating UI');
+                    
+                    // Update sidebar user info
                     document.getElementById('user-name').textContent = userData.user.name || 'User';
                     document.getElementById('user-email').textContent = userData.user.email;
-                    document.getElementById('admin-email').value = userData.user.email;
-                    document.getElementById('admin-email-display').textContent = userData.user.email;
 
+                    // Populate the admin email field
+                    const adminEmailDisplay = document.getElementById('admin-email-display');
+                    if (adminEmailDisplay) {
+                        adminEmailDisplay.textContent = userData.user.email;
+                    }
+                    const adminEmailInput = document.getElementById('admin-email');
+                    if (adminEmailInput) {
+                        adminEmailInput.value = userData.user.email;
+                    }
+
+                    // Update avatar
                     if (userData.user.avatarUrl) {
                         const avatarImg = document.getElementById('user-avatar');
                         avatarImg.src = userData.user.avatarUrl;
                         avatarImg.style.display = 'block';
                         document.getElementById('user-avatar-placeholder').style.display = 'none';
                     }
+                    
+                    // Populate configuration fields if config data exists
+                    if (userData.config) {
+                        console.log('✅ Populating configuration fields');
+                        populateConfigFields(userData.config);
+                    }
+                    
+                    console.log('✅ UI updated successfully');
                 } else {
-                    throw new Error('Invalid user data');
+                    console.error('❌ Invalid user data structure:', userData);
+                    alert('Login failed: Invalid user data received. Please try refreshing the page.');
                 }
             } catch (error) {
-                console.error('Error fetching user data:', error);
-                localStorage.removeItem('swell_session');
-                attemptAutoLogin();
+                console.error('❌ Error fetching user data:', error);
+                console.error('❌ Error stack:', error.stack);
+                alert('Login failed: ' + error.message + '\n\nPlease check the console for details.');
             }
         }
+        
+        // NEW FUNCTION: Populate configuration fields with data from backend
+        function populateConfigFields(config) {
+            console.log('Populating config fields:', config);
+            
+            // Calendar ID
+            const calendarIdInput = document.getElementById('calendar-id');
+            if (calendarIdInput && config.calendarId) {
+                calendarIdInput.value = config.calendarId;
+            }
+            
+            // Timezone
+            const timezoneSelect = document.getElementById('business-timezone');
+            if (timezoneSelect && config.timezone) {
+                timezoneSelect.value = config.timezone;
+            }
+            
+            // Payment processor
+            if (config.paymentProcessor) {
+                updatePaymentPlaceholder(config.paymentProcessor);
+            }
+            
+            // Base payment link
+            const paymentLinkInput = document.getElementById('base-payment-link');
+            if (paymentLinkInput && config.basePaymentLink) {
+                paymentLinkInput.value = config.basePaymentLink;
+            }
+            
+            // Business hours
+            if (config.businessHours) {
+                Object.keys(config.businessHours).forEach(day => {
+                    const dayConfig = config.businessHours[day];
+                    const enabledCheckbox = document.getElementById(`${day}-enabled`);
+                    const startInput = document.getElementById(`${day}-start`);
+                    const endInput = document.getElementById(`${day}-end`);
+                    
+                    if (enabledCheckbox) {
+                        enabledCheckbox.checked = dayConfig.enabled;
+                    }
+                    if (startInput && dayConfig.start) {
+                        startInput.value = dayConfig.start;
+                        startInput.disabled = !dayConfig.enabled;
+                    }
+                    if (endInput && dayConfig.end) {
+                        endInput.value = dayConfig.end;
+                        endInput.disabled = !dayConfig.enabled;
+                    }
+                    
+                    // Update visual state
+                    const container = enabledCheckbox ? enabledCheckbox.closest('.availability-available, .availability-blocked') : null;
+                    if (container) {
+                        if (dayConfig.enabled) {
+                            container.classList.remove('availability-blocked');
+                            container.classList.add('availability-available');
+                        } else {
+                            container.classList.remove('availability-available');
+                            container.classList.add('availability-blocked');
+                        }
+                    }
+                });
+            }
+            
+            // Services
+            if (config.services && Array.isArray(config.services)) {
+                services = config.services;
+                renderServices();
+            }
+            
+            // Holidays
+            if (config.holidays && Array.isArray(config.holidays)) {
+                holidays = config.holidays;
+                renderHolidays();
+            }
+            
+            console.log('✅ Configuration fields populated');
+        }
+        
+        // Render services list (placeholder - you'll need to implement this)
+        function renderServices() {
+            console.log('Rendering services:', services);
+            // TODO: Implement service rendering logic
+        }
+        
+        // Render holidays list (placeholder - you'll need to implement this)
+        function renderHolidays() {
+            console.log('Rendering holidays:', holidays);
+            // TODO: Implement holiday rendering logic
+        }
 
-        // Extract token from hash IMMEDIATELY on script load
+        // Call fetchUserData on page load
+        // CRITICAL: Extract token from hash IMMEDIATELY before anything else
         if (window.location.hash && window.location.hash.startsWith('#session=')) {
             const token = window.location.hash.substring('#session='.length);
+            console.log('⚡ IMMEDIATE hash detection on page load');
+            console.log('Token length:', token ? token.length : 0);
             if (token) {
                 localStorage.setItem('swell_session', token);
-                history.replaceState(null, null, window.location.pathname);
+                console.log('✅ Token saved to localStorage immediately');
             }
         }
         
         window.onload = function() {
             initializeTimezone();
+            updateEmbedCodes(); // Set correct widget URLs
             fetchUserData();
         }
     </script>
