@@ -598,13 +598,10 @@
             submitBtn.textContent = 'Signing in...';
             
             try {
-                const response = await fetch(AUTH_HUB_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'authenticate',
-                        gmail: gmail
-                    })
+                // Use GET request for CORS compatibility
+                const url = `${AUTH_HUB_URL}?action=authenticate&gmail=${encodeURIComponent(gmail)}`;
+                const response = await fetch(url, {
+                    method: 'GET'
                 });
                 
                 const result = await response.json();
