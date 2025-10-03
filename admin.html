@@ -1152,7 +1152,34 @@
             document.getElementById('payment-type-label').textContent = label;
         }
 
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz61JIlj9F-84byXh6OjxkM62prukzqJWSKyqhzw8DHliQRijPXmUzlgy14c9CPHfzzAA/exec';
+        // IMPORTANT: Get the deployment URL from the wizard setup
+        // Each user has their own deployment URL after completing setup
+        function getGoogleScriptUrl() {
+            // Check if URL is in query string (from wizard redirect)
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlFromQuery = urlParams.get('deploymentUrl');
+            if (urlFromQuery) {
+                localStorage.setItem('swell_deployment_url', urlFromQuery);
+                return urlFromQuery;
+            }
+            
+            // Check localStorage
+            const storedUrl = localStorage.getItem('swell_deployment_url');
+            if (storedUrl) {
+                return storedUrl;
+            }
+            
+            // No URL found - redirect to setup wizard
+            console.error('No deployment URL found. Redirecting to setup wizard...');
+            setTimeout(() => {
+                if (confirm('You need to complete the setup first.\n\nRedirect to setup wizard now?')) {
+                    window.location.href = 'setup-wizard.html';
+                }
+            }, 1000);
+            return null;
+        }
+        
+        const GOOGLE_SCRIPT_URL = getGoogleScriptUrl();
         
         // Generate widget URL for current user
         function getWidgetUrl() {

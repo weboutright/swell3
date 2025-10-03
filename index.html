@@ -230,11 +230,11 @@
 
             <!-- Enhanced CTA Group -->
             <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 mb-20 fade-in-up delay-300">
-                <button class="btn-premium inline-flex items-center justify-center px-12 py-5 border border-transparent text-lg font-bold rounded-2xl shadow-2xl text-white hover:scale-105 transition duration-300 transform">
+                <button onclick="handleGetStarted()" class="btn-premium inline-flex items-center justify-center px-12 py-5 border border-transparent text-lg font-bold rounded-2xl shadow-2xl text-white hover:scale-105 transition duration-300 transform">
                     Get Started Free
                 </button>
-                <button class="inline-flex items-center justify-center px-12 py-5 border-2 border-emerald-600 text-lg font-semibold rounded-2xl text-emerald-600 bg-white/80 backdrop-blur-sm hover:bg-emerald-50 hover:scale-105 transition duration-300 shadow-xl">
-                    See Live Demo
+                <button onclick="openDemoAdmin()" class="inline-flex items-center justify-center px-12 py-5 border-2 border-emerald-600 text-lg font-semibold rounded-2xl text-emerald-600 bg-white/80 backdrop-blur-sm hover:bg-emerald-50 hover:scale-105 transition duration-300 shadow-xl">
+                    Try Live Demo
                 </button>
             </div>
             
@@ -541,30 +541,40 @@
 
     <script>
         // Google Apps Script API URL - UPDATE THIS WITH YOUR DEPLOYMENT URL
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz61JIlj9F-84byXh6OjxkM62prukzqJWSKyqhzw8DHliQRijPXmUzlgy14c9CPHfzzAA/exec';
+        // IMPORTANT: Each user deploys their OWN Code.gs to their Google account
+        // The setup wizard guides them through this process
         
-        // Login to admin function
-        function loginToAdmin() {
-            // Redirect to Google Apps Script for authentication
-            window.location.href = GOOGLE_SCRIPT_URL + '?page=admin';
+        // Get Started button - redirect to setup wizard
+        function handleGetStarted() {
+            window.location.href = 'setup-wizard.html';
         }
         
-        // Login Modal Functions
-        function openLoginModal() {
-            document.getElementById('loginModal').classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            // Re-initialize icons for the modal
-            setTimeout(() => lucide.createIcons(), 100);
+        // Open demo admin (CODE2.gs backend)
+        function openDemoAdmin() {
+            window.location.href = 'admin-demo.html';
         }
-
-        function closeLoginModal() {
-            document.getElementById('loginModal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
+        
+        function showBookingDemo() {
+            // Check if user has completed setup
+            const deploymentUrl = localStorage.getItem('swell_deployment_url');
+            if (deploymentUrl) {
+                window.open(deploymentUrl + '?page=widget', '_blank');
+            } else {
+                alert('👋 Welcome to Swell!\n\nTo see the booking widget, you will need to complete the 5-minute setup first.\n\nClick "Get Started" to begin!');
+                setTimeout(() => {
+                    window.location.href = 'setup-wizard.html';
+                }, 2000);
+            }
         }
-
-        function loginWithGoogle() {
-            closeLoginModal();
-            window.location.href = GOOGLE_SCRIPT_URL + '?page=admin';
+        
+        function openLiveDemo() {
+            // Open demo admin
+            window.location.href = 'admin-demo.html';
+        }
+        
+        function tryForFree() {
+            // Redirect to setup wizard
+            window.location.href = 'setup-wizard.html';
         }
 
         // Close modal when clicking outside

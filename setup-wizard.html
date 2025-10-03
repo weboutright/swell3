@@ -664,9 +664,15 @@
         
         function openAdminDashboard() {
             if (userDeploymentUrl) {
-                window.open(`${userDeploymentUrl}?page=admin`, '_blank');
+                // Redirect to admin.html with deployment URL as query parameter
+                window.location.href = `admin.html?deploymentUrl=${encodeURIComponent(userDeploymentUrl)}`;
             } else {
-                showNotification('Deployment URL not found', 'error');
+                const storedUrl = localStorage.getItem('swell_deployment_url');
+                if (storedUrl) {
+                    window.location.href = `admin.html?deploymentUrl=${encodeURIComponent(storedUrl)}`;
+                } else {
+                    showNotification('Deployment URL not found', 'error');
+                }
             }
         }
         
