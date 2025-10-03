@@ -1088,18 +1088,45 @@
         
         // Call async function immediately on page load
         (async function initializeAdminPanel() {
-            GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
-            console.log('✅ GOOGLE_SCRIPT_URL initialized:', GOOGLE_SCRIPT_URL);
-            
-            if (GOOGLE_SCRIPT_URL) {
-                // Fetch user data FIRST (so USER_DATA is available)
-                await fetchUserData();
+            try {
+                // First, get the session token. This is the most important step.
+                const token = getSessionFromHash();
                 
-                // Now that we have the URL AND user data, update embed codes (silently on init)
-                updateEmbedCodes(true);
-                
-                // Initialize all sections
-                initializeAllSections();
+                // Next, ensure the Google Script URL is available.
+                GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
+                if (!GOOGLE_SCRIPT_URL) {
+                    // If no URL, getGoogleScriptUrl will have already initiated the redirect. Stop here.
+                    return;
+                }
+                console.log('✅ GOOGLE_SCRIPT_URL initialized:', GOOGLE_SCRIPT_URL);
+
+                // If we have a token, fetch user data.
+                if (token) {
+                    await fetchUserData(token);
+                } else {
+                    // If there's no token, we can't proceed.
+                    // This might happen if the user bookmarks the page after the token hash is cleared.
+                    // The login flow should handle this, but we add a safeguard.
+                    showNotification('Authentication token not found. Please log in.', 'error');
+                    // Consider a redirect to a login page if you have one.
+                    return;
+                }
+
+                // After fetching data, check if it was successful.
+                if (window.USER_DATA && window.USER_DATA.user) {
+                    // Now that we have user data, initialize the rest of the page.
+                    updateEmbedCodes(true); // Silently update embed codes on initial load
+                    initializeAllSections(); // Populate all UI elements
+                } else {
+                    // This case handles if fetchUserData failed for some reason (e.g., invalid token)
+                    throw new Error('Failed to load user data. The session may be invalid.');
+                }
+            } catch (error) {
+                console.error('Error during admin panel initialization:', error);
+                showNotification(error.message || 'Could not initialize the admin panel.', 'error');
+                // You might want to clear stored data and redirect to a login page here.
+                // localStorage.removeItem('session_token');
+                // window.location.href = 'login.html';
             }
         })();
         
