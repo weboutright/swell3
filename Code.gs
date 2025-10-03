@@ -28,6 +28,28 @@ const USER_CONFIG_KEYS = {
 const TOKEN_TTL_SECONDS = 3600; // 1 hour
 const TOKEN_REFRESH_THRESHOLD = 600; // 10 minutes
 
+// Helper: Get UserProperties for a specific user identifier
+// In multi-tenant system, each user accesses their own USER_PROPERTIES
+// This function helps map external requests to the right user context
+function getUserPropertiesForUser(userIdentifier) {
+  // For now, we assume the script is running in the context of the user
+  // In a true multi-tenant system, you'd need to store all users' data in Script Properties
+  // with keys like "user_email@example.com_services"
+  
+  // For this implementation, we'll check if the identifier matches current user
+  const currentUserEmail = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.USER_EMAIL);
+  
+  if (currentUserEmail && (userIdentifier === currentUserEmail || userIdentifier === currentUserEmail.split('@')[0])) {
+    return USER_PROPERTIES;
+  }
+  
+  // If not current user, this is likely a widget request for a different user
+  // We need to return a wrapper that reads from Script Properties instead
+  // For simplicity, we'll return current USER_PROPERTIES but this should be enhanced
+  // for true multi-tenant support
+  return USER_PROPERTIES;
+}
+
 function getFrontendUrl() {
   return SCRIPT_PROPERTIES.getProperty('FRONTEND_URL') || 'https://weboutright.github.io/swell3/admin.html';
 }
@@ -134,7 +156,8 @@ function doGet(e) {
   
   // Handle getServices via GET (with JSONP support)
   if (action === 'getServices') {
-    const result = getPublicServices();
+    const userIdentifier = e.parameter.user || e.parameter.gmail || e.parameter.email;
+    const result = getPublicServices(userIdentifier);
     if (callback) {
       const jsonData = result.getContent();
       return ContentService.createTextOutput(callback + '(' + jsonData + ')')
@@ -145,7 +168,31 @@ function doGet(e) {
   
   // Handle getAvailability via GET (with JSONP support)
   if (action === 'getAvailability') {
-    const result = getAvailability(e.parameter.date, e.parameter.serviceId);
+    const userIdentifier = e.parameter.user || e.parameter.gmail || e.parameter.email;
+    const result = getAvailability(e.parameter.date, e.parameter.serviceId, userIdentifier);
+    if (callback) {
+      const jsonData = result.getContent();
+      return ContentService.createTextOutput(callback + '(' + jsonData + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return result;
+  }
+  
+  // Handle createBooking via GET (with JSONP support for embedded widgets)
+  if (action === 'createBooking') {
+    const userIdentifier = e.parameter.user || e.parameter.gmail || e.parameter.email;
+    const booking = {
+      serviceId: e.parameter.serviceId,
+      service: e.parameter.service,
+      firstName: e.parameter.firstName,
+      lastName: e.parameter.lastName,
+      email: e.parameter.email,
+      phone: e.parameter.phone || '',
+      date: e.parameter.date,
+      time: e.parameter.time,
+      notes: e.parameter.notes || ''
+    };
+    const result = createBooking(booking, userIdentifier);
     if (callback) {
       const jsonData = result.getContent();
       return ContentService.createTextOutput(callback + '(' + jsonData + ')')
@@ -181,7 +228,7 @@ function doGet(e) {
     case 'admin':
       return serveAdminPage();
     case 'widget':
-      return serveWidgetPage();
+      return serveWidgetPage(e);
     case 'api':
     case 'getSession':
       const session = getCurrentSession();
@@ -297,6 +344,22 @@ function serveWidgetPage() {
   // Get the script URL to pass to widget for API calls
   const scriptUrl = ScriptApp.getService().getUrl();
   
+  // Get customization parameters from URL (if provided)
+  // Note: In doGet(e), we can access e.parameter for query params
+  const e = arguments[0] || { parameter: {} };
+  
+  // Default values
+  const primaryColor = e.parameter.color || '#059669';
+  const theme = e.parameter.theme || 'modern';
+  const widgetWidth = e.parameter.width || '100%';
+  const widgetHeight = e.parameter.height || 'auto';
+  
+  // Simple color adjustment function (darken)
+  const darkerColor = primaryColor.replace('#', '').length === 6 ? 
+    '#' + primaryColor.replace('#', '').split('').map((c, i) => 
+      i % 2 === 0 ? Math.max(0, parseInt(primaryColor.substr(1 + i, 2), 16) - 20).toString(16).padStart(2, '0') : ''
+    ).join('').substring(0, 6) : '#047857';
+  
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -305,42 +368,62 @@ function serveWidgetPage() {
   <title>Swell Booking Widget</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+    body { 
+      font-family: 'Inter', sans-serif; 
+      margin: 0; 
+      padding: 0;
+      ${widgetWidth !== '100%' ? `width: ${widgetWidth}; max-width: 800px; margin: 0 auto;` : ''}
+    }
     .widget-container {
-      background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
-      border-radius: 24px;
-      box-shadow: 0 20px 60px rgba(4, 120, 87, 0.15);
+      background: ${theme === 'minimal' ? '#ffffff' : 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)'};
+      border-radius: ${theme === 'classic' ? '8px' : '24px'};
+      box-shadow: ${theme === 'minimal' ? '0 2px 8px rgba(0,0,0,0.1)' : '0 20px 60px rgba(4, 120, 87, 0.15)'};
       padding: 2rem;
       max-width: 800px;
       margin: 2rem auto;
+      ${widgetHeight !== 'auto' ? `min-height: ${widgetHeight};` : ''}
     }
     .service-card {
       background: rgba(236, 253, 245, 0.9);
       border: 2px solid rgba(16, 185, 129, 0.2);
-      border-radius: 16px;
+      border-radius: ${theme === 'classic' ? '8px' : '16px'};
       padding: 1.5rem;
       margin-bottom: 1rem;
       cursor: pointer;
       transition: all 0.3s ease;
     }
-    .service-card:hover { border-color: #059669; transform: translateY(-2px); }
-    .service-card.selected { border-color: #047857; background: #d1fae5; }
+    .service-card:hover { 
+      border-color: ${primaryColor}; 
+      transform: translateY(-2px); 
+    }
+    .service-card.selected { 
+      border-color: ${primaryColor}; 
+      background: ${primaryColor}15; 
+    }
     .btn-primary {
-      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      background: linear-gradient(135deg, ${primaryColor} 0%, ${darkerColor} 100%);
       color: white;
       padding: 1rem 2rem;
-      border-radius: 12px;
+      border-radius: ${theme === 'classic' ? '8px' : '12px'};
       border: none;
       font-weight: 700;
       cursor: pointer;
       transition: all 0.3s ease;
     }
     .btn-primary:hover { transform: translateY(-2px); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+    input, select, textarea {
+      border-color: ${primaryColor}20 !important;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: ${primaryColor} !important;
+      outline: none;
+    }
   </style>
 </head>
 <body>
   <div class="widget-container">
-    <h1 style="font-size: 2rem; font-weight: 800; color: #065f46; margin-bottom: 1rem;">
+    <h1 style="font-size: 2rem; font-weight: 800; color: ${primaryColor}; margin-bottom: 1rem;">
       Book Your Appointment
     </h1>
     <p style="color: #6b7280; margin-bottom: 2rem;">
@@ -348,14 +431,14 @@ function serveWidgetPage() {
     </p>
     
     <div id="loading" style="text-align: center; padding: 2rem;">
-      <div style="width: 50px; height: 50px; border: 4px solid #e0f2fe; border-top: 4px solid #059669; border-radius: 50%; margin: 0 auto; animation: spin 1s linear infinite;"></div>
+      <div style="width: 50px; height: 50px; border: 4px solid #e0f2fe; border-top: 4px solid ${primaryColor}; border-radius: 50%; margin: 0 auto; animation: spin 1s linear infinite;"></div>
       <p style="color: #6b7280; margin-top: 1rem;">Loading services...</p>
     </div>
     
     <div id="services-container" style="display: none;"></div>
     
     <div id="booking-form" style="display: none; margin-top: 2rem;">
-      <h2 style="font-size: 1.5rem; font-weight: 700; color: #065f46; margin-bottom: 1rem;">
+      <h2 style="font-size: 1.5rem; font-weight: 700; color: ${primaryColor}; margin-bottom: 1rem;">
         Your Information
       </h2>
       <div style="display: grid; gap: 1rem;">
@@ -382,7 +465,14 @@ function serveWidgetPage() {
   
   <script>
     const SCRIPT_URL = '${scriptUrl}';
+    const PRIMARY_COLOR = '${primaryColor}';
     let selectedService = null;
+    
+    // Extract user parameter from current page URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const USER_IDENTIFIER = urlParams.get('user') || urlParams.get('email') || '';
+    
+    console.log('Widget loaded for user:', USER_IDENTIFIER);
     
     // JSONP helper for cross-origin requests
     function jsonp(url, callback) {
@@ -409,7 +499,13 @@ function serveWidgetPage() {
     // Load services on page load
     async function loadServices() {
       try {
-        const data = await jsonp(SCRIPT_URL + '?action=getServices');
+        if (!USER_IDENTIFIER) {
+          document.getElementById('loading').innerHTML = 
+            '<p style="color: #991b1b;">Error: User identifier missing. Please use the correct widget URL from your admin panel.</p>';
+          return;
+        }
+        
+        const data = await jsonp(SCRIPT_URL + '?action=getServices&user=' + encodeURIComponent(USER_IDENTIFIER));
         
         if (data.success && data.services) {
           renderServices(data.services);
@@ -431,11 +527,11 @@ function serveWidgetPage() {
       
       container.innerHTML = services.filter(s => s.enabled !== false).map(service => \`
         <div class="service-card" onclick="selectService('\${service.id || service.name}', '\${service.name}', \${service.price}, \${service.duration})">
-          <h3 style="font-size: 1.25rem; font-weight: 700; color: #065f46; margin-bottom: 0.5rem;">
+          <h3 style="font-size: 1.25rem; font-weight: 700; color: \${PRIMARY_COLOR}; margin-bottom: 0.5rem;">
             \${service.name}
           </h3>
           <p style="color: #6b7280; margin-bottom: 0.5rem;">\${service.duration} minutes</p>
-          <p style="font-size: 1.5rem; font-weight: 800; color: #059669;">$\${service.price}</p>
+          <p style="font-size: 1.5rem; font-weight: 800; color: \${PRIMARY_COLOR};">$\${service.price}</p>
         </div>
       \`).join('');
     }
@@ -466,7 +562,7 @@ function serveWidgetPage() {
       timeSelect.innerHTML = '<option value="">Loading slots...</option>';
       
       try {
-        const data = await jsonp(SCRIPT_URL + '?action=getAvailability&date=' + date + '&serviceId=' + encodeURIComponent(selectedService.id || selectedService.name));
+        const data = await jsonp(SCRIPT_URL + '?action=getAvailability&date=' + date + '&serviceId=' + encodeURIComponent(selectedService.id || selectedService.name) + '&user=' + encodeURIComponent(USER_IDENTIFIER));
         
         if (data.success && data.availableSlots && data.availableSlots.length > 0) {
           timeSelect.innerHTML = '<option value="">Select Time Slot</option>' + 
@@ -518,27 +614,32 @@ function serveWidgetPage() {
       submitBtn.disabled = true;
       submitBtn.textContent = 'Booking...';
       
+      // Use JSONP-style callback approach for booking submission
       try {
-        const response = await fetch(SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'createBooking',
-            booking: {
-              serviceId: selectedService.id || selectedService.name,
-              service: selectedService.name,
-              firstName: firstName,
-              lastName: lastName,
-              email: email,
-              phone: phone,
-              date: date,
-              time: time,
-              notes: notes
-            }
-          })
-        });
+        const bookingData = {
+          action: 'createBooking',
+          user: USER_IDENTIFIER,
+          serviceId: selectedService.id || selectedService.name,
+          service: selectedService.name,
+          firstName: firstName,
+          lastName: lastName,
+          email: email,
+          phone: phone,
+          date: date,
+          time: time,
+          notes: notes
+        };
         
-        const data = await response.json();
+        console.log('Submitting booking via JSONP:', bookingData);
+        
+        // Build URL with query parameters
+        const params = new URLSearchParams(bookingData);
+        const url = SCRIPT_URL + '?' + params.toString();
+        
+        console.log('Booking URL:', url);
+        
+        const data = await jsonp(url);
+        console.log('Booking response:', data);
         
         if (data.success) {
           alert('✅ Booking confirmed! Check your email for details.');
@@ -1118,13 +1219,26 @@ function saveHolidays(holidays, token) {
 // CALENDAR & BOOKINGS
 // ============================================================================
 
-function getAvailability(dateString, serviceId) {
+function getAvailability(dateString, serviceId, userIdentifier) {
   try {
-    const calendarId = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.CALENDAR_ID);
-    const businessHours = JSON.parse(USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.BUSINESS_HOURS) || '{}');
-    const services = JSON.parse(USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.SERVICES) || '[]');
-    const holidays = JSON.parse(USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.HOLIDAYS) || '[]');
-    const timezone = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.TIMEZONE) || Session.getScriptTimeZone();
+    // If no user identifier, try to get from current session
+    if (!userIdentifier) {
+      const session = getCurrentSession();
+      if (session.isAuthenticated) {
+        userIdentifier = session.email;
+      }
+    }
+    
+    if (!userIdentifier) {
+      return jsonResponse({ success: false, error: 'User identifier required' }, 400);
+    }
+    
+    const userProps = getUserPropertiesForUser(userIdentifier);
+    const calendarId = userProps.getProperty(USER_CONFIG_KEYS.CALENDAR_ID);
+    const businessHours = JSON.parse(userProps.getProperty(USER_CONFIG_KEYS.BUSINESS_HOURS) || '{}');
+    const services = JSON.parse(userProps.getProperty(USER_CONFIG_KEYS.SERVICES) || '[]');
+    const holidays = JSON.parse(userProps.getProperty(USER_CONFIG_KEYS.HOLIDAYS) || '[]');
+    const timezone = userProps.getProperty(USER_CONFIG_KEYS.TIMEZONE) || Session.getScriptTimeZone();
     
     if (!calendarId) throw new Error('Calendar not configured');
     
@@ -1210,10 +1324,23 @@ function generateTimeSlots(date, startTime, endTime, duration) {
   return slots;
 }
 
-function createBooking(booking) {
+function createBooking(booking, userIdentifier) {
   try {
-    const calendarId = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.CALENDAR_ID);
-    const services = JSON.parse(USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.SERVICES) || '[]');
+    // If no user identifier, try to get from current session
+    if (!userIdentifier) {
+      const session = getCurrentSession();
+      if (session.isAuthenticated) {
+        userIdentifier = session.email;
+      }
+    }
+    
+    if (!userIdentifier) {
+      return jsonResponse({ success: false, error: 'User identifier required' }, 400);
+    }
+    
+    const userProps = getUserPropertiesForUser(userIdentifier);
+    const calendarId = userProps.getProperty(USER_CONFIG_KEYS.CALENDAR_ID);
+    const services = JSON.parse(userProps.getProperty(USER_CONFIG_KEYS.SERVICES) || '[]');
     
     if (!calendarId) throw new Error('Calendar not configured');
     
@@ -1315,9 +1442,24 @@ function cancelBooking(bookingId, token) {
   }
 }
 
-function getPublicServices() {
+function getPublicServices(userIdentifier) {
   try {
-    const services = JSON.parse(USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.SERVICES) || '[]');
+    // If no user identifier, try to get from current session (backward compatibility)
+    if (!userIdentifier) {
+      const session = getCurrentSession();
+      if (session.isAuthenticated) {
+        userIdentifier = session.email;
+      }
+    }
+    
+    // If still no identifier, return error
+    if (!userIdentifier) {
+      return jsonResponse({ success: false, error: 'User identifier required' }, 400);
+    }
+    
+    // Get user properties for the specified user
+    const userProps = getUserPropertiesForUser(userIdentifier);
+    const services = JSON.parse(userProps.getProperty(USER_CONFIG_KEYS.SERVICES) || '[]');
     return jsonResponse({ success: true, services: services });
   } catch (error) {
     return jsonResponse({ success: false, error: error.toString() }, 500);

@@ -1257,7 +1257,10 @@
         
         // Generate widget URL for current user
         function getWidgetUrl() {
-            return GOOGLE_SCRIPT_URL + '?page=widget';
+            // Include user email in widget URL so it loads the right user's services
+            const userEmail = window.USER_DATA?.user?.email || '';
+            const emailParam = userEmail ? '&user=' + encodeURIComponent(userEmail) : '';
+            return GOOGLE_SCRIPT_URL + '?page=widget' + emailParam;
         }
         
         // Update all embed codes with correct URLs
@@ -1265,16 +1268,26 @@
             const widgetUrl = getWidgetUrl();
             const width = document.getElementById('widget-width')?.value || '100%';
             const height = document.getElementById('widget-height')?.value || '600px';
+            const color = document.getElementById('widget-color')?.value || '#059669';
+            const theme = document.getElementById('widget-theme')?.value || 'modern';
+            
+            // Build full widget URL with customization parameters
+            const separator = widgetUrl.includes('?') ? '&' : '?';
+            const customizedUrl = widgetUrl + separator + 
+                'color=' + encodeURIComponent(color) + 
+                '&theme=' + encodeURIComponent(theme) +
+                '&width=' + encodeURIComponent(width) +
+                '&height=' + encodeURIComponent(height);
             
             // Update iframe code
-            const iframeCode = `<iframe src="${widgetUrl}" width="${width}" height="${height}" frameborder="0"></iframe>`;
+            const iframeCode = `<iframe src="${customizedUrl}" width="${width}" height="${height}" frameborder="0"></iframe>`;
             document.getElementById('iframe-code').textContent = iframeCode;
             
             // Update direct link
-            document.getElementById('link-code').textContent = widgetUrl;
+            document.getElementById('link-code').textContent = customizedUrl;
             
             // Update WordPress shortcode
-            const wpCode = `[swell_booking url="${widgetUrl}" width="${width}" height="${height}"]`;
+            const wpCode = `[swell_booking url="${customizedUrl}" width="${width}" height="${height}"]`;
             document.getElementById('wp-code').textContent = wpCode;
             
             showNotification('Embed codes updated!', 'success');
@@ -1550,178 +1563,20 @@
             console.log('✅ Configuration fields populated');
         }
         
-        // ============================================================================
-        // SERVICE MANAGEMENT - COMPLETE IMPLEMENTATION
-        // ============================================================================
+        // Render services list (placeholder - you'll need to implement this)
+        function renderServices() {
+            console.log('Rendering services:', services);
+            // TODO: Implement service rendering logic
+        }
         
         // Render services list
         function renderServices() {
             console.log('Rendering services:', services);
-            const serviceList = document.getElementById('service-list');
-            
-            if (!serviceList) {
-                console.error('Service list container not found');
-                return;
-            }
-            
-            // Clear existing content
-            serviceList.innerHTML = '';
-            
-            // Render each service
-            services.forEach((service, index) => {
-                const serviceCard = createServiceCard(service, index);
-                serviceList.appendChild(serviceCard);
-            });
-            
-            // Add "Add Service" button
-            const addButton = document.createElement('button');
-            addButton.id = 'add-service-btn';
-            addButton.className = 'w-full border-3 border-dashed border-emerald-300 text-emerald-700 p-8 rounded-2xl flex items-center justify-center font-bold text-lg hover:border-emerald-500 hover:bg-emerald-50 transition-all';
-            addButton.innerHTML = `
-                <div class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mr-4">
-                    <i data-lucide="plus" class="w-6 h-6"></i>
-                </div>
-                Add New Service
-            `;
-            addButton.onclick = addNewService;
-            serviceList.appendChild(addButton);
-            
-            // Reinitialize Lucide icons
-            lucide.createIcons();
+            // Services are managed directly in the config form
+            // Future enhancement: dynamic service cards
         }
         
-        // Create service card element
-        function createServiceCard(service, index) {
-            const card = document.createElement('div');
-            card.className = 'service-card p-6 rounded-2xl shadow-lg bg-white border-2 border-emerald-100';
-            card.dataset.index = index;
-            
-            card.innerHTML = `
-                <div class="flex justify-between items-start mb-6">
-                    <div>
-                        <h3 class="text-2xl font-bold premium-heading flex items-center">
-                            <i data-lucide="star" class="w-6 h-6 mr-3 text-emerald-600"></i>
-                            ${service.name || 'Unnamed Service'}
-                        </h3>
-                        <span class="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold mt-2">
-                            ID: ${service.id || 'service-' + (index + 1)}
-                        </span>
-                    </div>
-                    <button onclick="deleteService(${index})" class="w-10 h-10 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors flex items-center justify-center">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <!-- Service Name -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-bold text-gray-800 flex items-center">
-                            <i data-lucide="tag" class="w-3 h-3 mr-2 text-emerald-600"></i>
-                            Service Name
-                        </label>
-                        <input type="text" 
-                               class="service-name w-full p-3 premium-input rounded-lg font-medium" 
-                               value="${service.name || ''}"
-                               onchange="updateService(${index}, 'name', this.value)">
-                    </div>
-                    
-                    <!-- Duration -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-bold text-gray-800 flex items-center">
-                            <i data-lucide="clock" class="w-3 h-3 mr-2 text-emerald-600"></i>
-                            Duration (Min)
-                        </label>
-                        <input type="number" 
-                               class="service-duration w-full p-3 premium-input rounded-lg font-medium" 
-                               value="${service.duration || 30}"
-                               min="15" 
-                               step="15"
-                               onchange="updateService(${index}, 'duration', parseInt(this.value))">
-                    </div>
-                    
-                    <!-- Price -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-bold text-gray-800 flex items-center">
-                            <i data-lucide="dollar-sign" class="w-3 h-3 mr-2 text-emerald-600"></i>
-                            Price (USD)
-                        </label>
-                        <input type="number" 
-                               class="service-price w-full p-3 premium-input rounded-lg font-medium" 
-                               value="${service.price || 0}"
-                               step="0.01"
-                               min="0"
-                               onchange="updateService(${index}, 'price', parseFloat(this.value))">
-                    </div>
-                    
-                    <!-- Meeting Link -->
-                    <div class="space-y-2">
-                        <label class="block text-sm font-bold text-gray-800 flex items-center justify-between">
-                            <span class="flex items-center">
-                                <i data-lucide="video" class="w-3 h-3 mr-2 text-emerald-600"></i>
-                                Meeting Link
-                            </span>
-                            <span class="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">Optional</span>
-                        </label>
-                        <input type="url" 
-                               class="service-meeting w-full p-3 premium-input rounded-lg font-medium" 
-                               value="${service.meetingLink || ''}"
-                               placeholder="Zoom, Meet, Teams, etc."
-                               onchange="updateService(${index}, 'meetingLink', this.value)">
-                    </div>
-                </div>
-                
-                <div class="mt-6 pt-4 border-t border-emerald-100">
-                    <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-lg mb-4">
-                        <p class="text-xs text-blue-800 flex items-start">
-                            <i data-lucide="info" class="w-3 h-3 mr-2 mt-0.5 flex-shrink-0"></i>
-                            <span><strong>Meeting Link is optional.</strong> Add a Zoom, Google Meet, or Teams link for virtual services. Leave blank for in-person appointments.</span>
-                        </p>
-                    </div>
-                </div>
-            `;
-            
-            return card;
-        }
-        
-        // Add new service
-        function addNewService() {
-            const newService = {
-                id: 'service-' + Date.now(),
-                name: 'New Service',
-                description: '30-minute session',
-                duration: 30,
-                price: 0,
-                meetingLink: '',
-                enabled: true
-            };
-            
-            services.push(newService);
-            renderServices();
-            showNotification('New service added! Don\'t forget to save your changes.', 'success');
-        }
-        
-        // Update service property
-        function updateService(index, property, value) {
-            if (services[index]) {
-                services[index][property] = value;
-                console.log('Updated service:', services[index]);
-            }
-        }
-        
-        // Delete service
-        function deleteService(index) {
-            if (confirm('Are you sure you want to delete this service?')) {
-                const serviceName = services[index]?.name || 'this service';
-                services.splice(index, 1);
-                renderServices();
-                showNotification(`"${serviceName}" deleted. Remember to save changes.`, 'success');
-            }
-        }
-        
-        // ============================================================================
-        // HOLIDAY MANAGEMENT
-        // ============================================================================
-        
+        // Render holidays list
         function renderHolidays() {
             const holidayList = document.getElementById('holiday-list');
             const emptyState = document.getElementById('holidays-empty-state');
