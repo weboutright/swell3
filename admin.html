@@ -1163,31 +1163,45 @@
         }
 
         function getSessionFromHash() {
+            console.log('=== GET SESSION FROM HASH ===');
+            console.log('window.location.hash:', window.location.hash);
+            console.log('window.location.href:', window.location.href);
+            
             if (window.location.hash && window.location.hash.startsWith('#session=')) {
                 const token = window.location.hash.substring('#session='.length);
-                console.log('Found session token in URL hash:', token ? 'YES' : 'NO');
+                console.log('✅ Found session token in URL hash');
+                console.log('Token length:', token ? token.length : 0);
+                console.log('Token (first 30 chars):', token ? token.substring(0, 30) + '...' : 'EMPTY');
+                
                 // Clean the URL hash after extracting the token
                 if (token) {
                     localStorage.setItem('swell_session', token);
-                    console.log('Saved token to localStorage');
+                    console.log('✅ Saved token to localStorage');
                     // Remove the hash from URL for cleaner appearance
                     history.replaceState(null, null, window.location.pathname);
+                    console.log('✅ Cleaned URL hash');
                 }
                 return token;
             }
+            
             const stored = localStorage.getItem('swell_session');
             console.log('Checking localStorage for token:', stored ? 'FOUND' : 'NOT FOUND');
+            if (stored) {
+                console.log('Token from localStorage (first 30 chars):', stored.substring(0, 30) + '...');
+            }
             return stored;
         }
 
         async function fetchUserData() {
             const session = getSessionFromHash();
+            console.log('=== FETCH USER DATA DEBUG ===');
             console.log('Session from hash/URL:', session);
             console.log('Current URL:', window.location.href);
             console.log('Current hash:', window.location.hash);
+            console.log('LocalStorage token:', localStorage.getItem('swell_session'));
 
             if (!session) {
-                console.log('No session found. Attempting auto-login with Google...');
+                console.log('❌ No session found. Attempting auto-login with Google...');
                 // Auto-login: Redirect to Google Apps Script to authenticate
                 attemptAutoLogin();
                 return;
@@ -1195,10 +1209,12 @@
 
             // Store session for persistence
             localStorage.setItem('swell_session', session);
-            console.log('Stored session in localStorage');
+            console.log('✅ Stored session in localStorage');
 
             try {
-                console.log('Fetching user data from:', GOOGLE_SCRIPT_URL, 'with token:', session);
+                console.log('📡 Fetching user data from:', GOOGLE_SCRIPT_URL);
+                console.log('Token (first 20 chars):', session.substring(0, 20) + '...');
+                
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     headers: {
@@ -1209,16 +1225,25 @@
                         token: session
                     })
                 });
-                console.log('Response status:', response.status);
-                console.log('Response ok:', response.ok);
+                
+                console.log('📥 Response status:', response.status);
+                console.log('📥 Response ok:', response.ok);
+                console.log('📥 Response headers:', [...response.headers.entries()]);
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    const errorText = await response.text();
+                    console.error('❌ HTTP error response body:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
                 }
-                const userData = await response.json();
-                console.log('User data received:', userData);
+                
+                const responseText = await response.text();
+                console.log('📥 Raw response text:', responseText);
+                
+                const userData = JSON.parse(responseText);
+                console.log('✅ User data parsed:', userData);
 
                 if (userData && userData.success && userData.user) {
+                    console.log('✅ Valid user data, updating UI');
                     document.getElementById('user-name').textContent = userData.user.name || 'User';
                     document.getElementById('user-email').textContent = userData.user.email;
 
@@ -1232,11 +1257,15 @@
                         avatarImg.style.display = 'block';
                         document.getElementById('user-avatar-placeholder').style.display = 'none';
                     }
+                    console.log('✅ UI updated successfully');
                 } else {
-                    console.error('Invalid user data:', userData);
+                    console.error('❌ Invalid user data structure:', userData);
+                    alert('Login failed: Invalid user data received. Please try refreshing the page.');
                 }
             } catch (error) {
-                console.error('Error fetching user data:', error);
+                console.error('❌ Error fetching user data:', error);
+                console.error('❌ Error stack:', error.stack);
+                alert('Login failed: ' + error.message + '\n\nPlease check the console for details.');
             }
         }
 
