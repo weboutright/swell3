@@ -1069,159 +1069,47 @@
     </div>
 
     <script>
-        // Global state for managing data
-        let holidays = [];
-        let services = [];
-        let detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-        // Initialize timezone detection
-        function initializeTimezone() {
-            // Display detected timezone
-            document.getElementById('detected-timezone-display').textContent = detectedTimezone;
-            
-            // Set detected timezone as default selection
-            const timezoneSelect = document.getElementById('business-timezone');
-            if (timezoneSelect) {
-                // Try to select the detected timezone
-                const option = Array.from(timezoneSelect.options).find(opt => opt.value === detectedTimezone);
-                if (option) {
-                    timezoneSelect.value = detectedTimezone;
-                }
-            }
-        }
+        // ========================================================================
+        // GLOBAL STATE & CONFIG
+        // ========================================================================
+        window.USER_DATA = {
+            user: null,
+            config: null,
+            token: null,
+            exp: null
+        };
         
-        // Use detected timezone button handler
-        function useDetectedTimezone() {
-            const timezoneSelect = document.getElementById('business-timezone');
-            if (timezoneSelect) {
-                timezoneSelect.value = detectedTimezone;
-                showNotification('Timezone set to: ' + detectedTimezone, 'success');
-            }
-        }
-
-        // Simple notification function
-        function showNotification(message, type = 'info') {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
-                type === 'success' ? 'bg-green-500 text-white' : 
-                type === 'error' ? 'bg-red-500 text-white' : 
-                'bg-blue-500 text-white'
-            }`;
-            notification.textContent = message;
-            
-            // Add to page
-            document.body.appendChild(notification);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-
-        // Navigation functions
-        function showSection(sectionId, element) {
-            try {
-                console.log('showSection called with:', sectionId, element);
-                
-                // Hide all sections
-                const sections = document.querySelectorAll('.section-content');
-                console.log('Found sections:', sections.length);
-                sections.forEach(section => {
-                    section.classList.add('hidden');
-                });
-                
-                // Show selected section
-                const targetSection = document.getElementById(sectionId);
-                if (targetSection) {
-                    targetSection.classList.remove('hidden');
-                    console.log('Successfully showing section:', sectionId);
-                } else {
-                    console.error('Section not found:', sectionId);
-                    return;
-                }
-                
-                // Update sidebar active state
-                const sidebarItems = document.querySelectorAll('.sidebar-item');
-                sidebarItems.forEach(item => {
-                    item.classList.remove('active');
-                });
-                
-                // Set active state
-                if (element) {
-                    element.classList.add('active');
-                    console.log('Set active element:', element);
-                } else {
-                    console.log('No element provided');
-                }
-                
-            } catch (error) {
-                console.error('Error in showSection:', error);
-            }
-        }
-
-        // Payment processor functions
-        function updatePaymentPlaceholder(type) {
-            const placeholderMap = {
-                'stripe': 'e.g., https://checkout.stripe.com/c/pay/xxxxxxxx',
-                'square': 'e.g., https://squareup.com/checkout/xxxxx/xxxxxxx'
-            };
-            const label = type.charAt(0).toUpperCase() + type.slice(1);
-
-            document.getElementById('base-payment-link').placeholder = placeholderMap[type];
-            document.getElementById('payment-processor-type').value = type;
-            document.getElementById('payment-type-label').textContent = label;
-        }
-
-        // Toggle payment section visibility
-        function togglePaymentSection() {
-            const paymentsEnabled = document.getElementById('payments-enabled').checked;
-            const paymentConfigSection = document.getElementById('payment-config-section');
-            
-            if (paymentsEnabled) {
-                paymentConfigSection.style.display = 'block';
-                showNotification('Payment processing enabled', 'success');
-            } else {
-                paymentConfigSection.style.display = 'none';
-                showNotification('Payment processing disabled - bookings will be free or cash-based', 'info');
-            }
-        }
-
-        // CODE2.gs URL for centralized authentication
-        const AUTH_HUB_URL = 'https://script.google.com/macros/s/AKfycbz61JIlj9F-84byXh6OjxkM62prukzqJWSKyqhzw8DHliQRijPXmUzlgy14c9CPHfzzAA/exec';
+        let GOOGLE_SCRIPT_URL = null;
+        let currentViewDate = new Date();
         
-        // IMPORTANT: Get the deployment URL from the wizard setup
-        // Each user has their own deployment URL after completing setup
+        // ========================================================================
+        // INITIALIZATION
+        // ========================================================================
+        
+        // Call async function immediately on page load
+        (async function initializeAdminPanel() {
+            GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
+            console.log('✅ GOOGLE_SCRIPT_URL initialized:', GOOGLE_SCRIPT_URL);
+            
+            if (GOOGLE_SCRIPT_URL) {
+                // Fetch user data FIRST (so USER_DATA is available)
+                await fetchUserData();
+                
+                // Now that we have the URL AND user data, update embed codes (silently on init)
+                updateEmbedCodes(true);
+                
+                // Initialize all sections
+                initializeAllSections();
+            }
+        })();
+        
         async function getGoogleScriptUrl() {
-            // Check if URL is in query string (from wizard redirect or CODE2.gs)
-            const urlParams = new URLSearchParams(window.location.search);
-            const urlFromQuery = urlParams.get('deploymentUrl');
-            if (urlFromQuery) {
-                localStorage.setItem('swell_deployment_url', urlFromQuery);
-                // DON'T remove query params yet - fetchUserData needs them
-                return urlFromQuery;
-            }
-            
-            // Check localStorage
-            const storedUrl = localStorage.getItem('swell_deployment_url');
+            const storedUrl = localStorage.getItem('google_script_url');
             if (storedUrl) {
                 return storedUrl;
             }
             
-            // No deployment URL - redirect to login page
-            console.error('No deployment URL found. Please sign in.');
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1000);
-            
-            // Show friendly message
-
-            console.error('No deployment URL found. Redirecting to setup wizard...');
-            setTimeout(() => {
-                window.location.href = 'setup-wizard.html';
-            }, 2000);
-            
-            // Show friendly message while redirecting
+            // If not found, redirect to setup
             document.body.innerHTML = `
                 <div style="font-family: system-ui; max-width: 600px; margin: 100px auto; padding: 20px; text-align: center;">
                     <h1 style="color: #047857; margin-bottom: 20px;">👋 Welcome to Swell!</h1>
@@ -1236,26 +1124,600 @@
                     </p>
                 </div>
             `;
+            // window.location.href = 'setup-wizard.html';
             return null;
         }
         
-        // Initialize - this will be async now
-        let GOOGLE_SCRIPT_URL = null;
-        
-        // Call async function immediately on page load
-        (async function initializeScriptUrl() {
-            GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
-            console.log('✅ GOOGLE_SCRIPT_URL initialized:', GOOGLE_SCRIPT_URL);
+        function initializeAllSections() {
+            // Populate settings and user info
+            populateConfigFields(window.USER_DATA.config);
+            document.getElementById('user-name').textContent = window.USER_DATA.user.name;
+            document.getElementById('user-email').textContent = window.USER_DATA.user.email;
+            document.getElementById('user-avatar').src = window.USER_DATA.user.avatarUrl;
             
-            if (GOOGLE_SCRIPT_URL) {
-                // Fetch user data FIRST (so USER_DATA is available)
-                await fetchUserData();
-                // Now that we have the URL AND user data, update embed codes (silently on init)
-                updateEmbedCodes(true);
-            }
-        })();
+            // Render dynamic content
+            renderServices();
+            renderHolidays();
+            renderCalendar();
+            fetchAnalytics();
+            fetchBookings();
+            
+            // Add event listeners
+            addEventListeners();
+            
+            // Show default section
+            showSection('dashboard', document.querySelector('.sidebar-link'));
+        }
         
-        // Generate widget URL for current user
+        // ========================================================================
+        // EVENT LISTENERS
+        // ========================================================================
+        
+        function addEventListeners() {
+            // Settings
+            document.getElementById('settings-form').addEventListener('submit', saveSettings);
+            document.getElementById('payment-processor').addEventListener('change', (e) => updatePaymentPlaceholder(e.target.value));
+            document.getElementById('payments-enabled').addEventListener('change', togglePaymentSection);
+            
+            // Business Hours
+            document.getElementById('business-hours-form').addEventListener('submit', saveBusinessHours);
+            
+            // Services
+            document.getElementById('add-service-btn').addEventListener('click', () => showServiceModal());
+            document.getElementById('service-form').addEventListener('submit', saveService);
+            
+            // Holidays
+            document.getElementById('holiday-form').addEventListener('submit', addHoliday);
+            
+            // Deployment
+            document.getElementById('update-embed-btn').addEventListener('click', () => updateEmbedCodes(false));
+            document.getElementById('copy-iframe-btn').addEventListener('click', () => copyToClipboard('iframe-code'));
+            document.getElementById('copy-link-btn').addEventListener('click', () => copyToClipboard('link-code'));
+            document.getElementById('copy-wp-btn').addEventListener('click', () => copyToClipboard('wp-code'));
+            
+            // Calendar
+            document.getElementById('calendar-prev-month').addEventListener('click', previousCalendarMonth);
+            document.getElementById('calendar-next-month').addEventListener('click', nextCalendarMonth);
+            document.getElementById('calendar-today').addEventListener('click', goToToday);
+            document.getElementById('calendar-view-toggle').addEventListener('change', () => renderCalendar());
+        }
+        
+        // ========================================================================
+        // API CALLS
+        // ========================================================================
+        
+        async function apiCall(action, payload = {}) {
+            if (!GOOGLE_SCRIPT_URL) {
+                showNotification('Google Script URL not configured', 'error');
+                return { success: false, error: 'Google Script URL not configured' };
+            }
+            
+            try {
+                const body = {
+                    token: window.USER_DATA.token,
+                    action: action,
+                    ...payload
+                };
+                
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                    redirect: 'follow'
+                });
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    console.error(`API Error (${action}):`, result.error);
+                    showNotification(`Error: ${result.error}`, 'error');
+                }
+                
+                return result;
+            } catch (error) {
+                console.error(`API Call failed (${action}):`, error);
+                showNotification('An unexpected error occurred. Check console.', 'error');
+                return { success: false, error: error.toString() };
+            }
+        }
+        
+        async function fetchUserData() {
+            const token = getSessionFromHash();
+            if (!token) {
+                // Handle missing token - maybe redirect to login
+                console.error('Authentication token not found.');
+                showNotification('Authentication failed. Please log in again.', 'error');
+                // Optionally redirect to login page
+                // window.location.href = 'login.html'; 
+                return;
+            }
+            
+            const result = await apiCall('getUserData', { token: token });
+            
+            if (result.success) {
+                window.USER_DATA = {
+                    user: result.user,
+                    config: result.config,
+                    token: token,
+                    exp: result.exp
+                };
+                console.log('✅ User data loaded:', result.user.email);
+            } else {
+                console.error('Failed to load user data:', result.error);
+                showNotification('Failed to load user data. Please try again.', 'error');
+            }
+        }
+        
+        // ========================================================================
+        // UI & NOTIFICATIONS
+        // ========================================================================
+        
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            if (!notification) return;
+            
+            notification.textContent = message;
+            notification.className = 'notification'; // Reset classes
+            
+            const typeClass = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500'
+            }[type];
+            
+            notification.classList.add(typeClass, 'show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        function showSection(sectionId, element) {
+            // Hide all sections
+            document.querySelectorAll('main > section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show the target section
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+            }
+            
+            // Update active link in sidebar
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('bg-green-100', 'text-green-800', 'font-semibold');
+            });
+            element.classList.add('bg-green-100', 'text-green-800', 'font-semibold');
+            
+            // Update header title
+            document.getElementById('header-title').textContent = element.textContent.trim();
+        }
+        
+        // ========================================================================
+        // AUTHENTICATION
+        // ========================================================================
+        
+        function getSessionFromHash() {
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#session=')) {
+                const token = hash.substring('#session='.length);
+                // Store token and remove from URL for security
+                localStorage.setItem('session_token', token);
+                window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+                return token;
+            }
+            // Fallback to localStorage if no hash
+            return localStorage.getItem('session_token');
+        }
+        
+        // ========================================================================
+        // DASHBOARD & ANALYTICS
+        // ========================================================================
+        
+        async function fetchAnalytics() {
+            const result = await apiCall('getAnalytics');
+            if (result.success) {
+                const analytics = result.analytics;
+                document.getElementById('total-revenue').textContent = `$${analytics.totalRevenue.toFixed(2)}`;
+                document.getElementById('total-bookings').textContent = analytics.totalBookings;
+                document.getElementById('avg-booking-value').textContent = `$${analytics.averageBookingValue.toFixed(2)}`;
+            }
+        }
+        
+        // ========================================================================
+        // CALENDAR VIEW
+        // ========================================================================
+        
+        function renderCalendar() {
+            const calendarGrid = document.getElementById('calendar-grid');
+            const monthYearLabel = document.getElementById('calendar-month-year');
+            const view = document.getElementById('calendar-view-toggle').value;
+            
+            calendarGrid.innerHTML = ''; // Clear previous view
+            
+            const year = currentViewDate.getFullYear();
+            const month = currentViewDate.getMonth();
+            monthYearLabel.textContent = `${currentViewDate.toLocaleString('default', { month: 'long' })} ${year}`;
+            
+            if (view === 'month') {
+                renderMonthView(year, month, calendarGrid);
+            } else {
+                renderWeekView(currentViewDate, calendarGrid);
+            }
+        }
+        
+        function renderMonthView(year, month, grid) {
+            grid.className = 'grid grid-cols-7 gap-px bg-gray-200 border border-gray-200';
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            // Add day headers
+            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(day => {
+                grid.innerHTML += `<div class="py-2 text-center text-sm font-semibold text-gray-600 bg-gray-50">${day}</div>`;
+            });
+            
+            // Add blank days
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div class="bg-white"></div>`;
+            }
+            
+            // Add day cells
+            for (let day = 1; day <= daysInMonth; day++) {
+                const isToday = new Date().getFullYear() === year && new Date().getMonth() === month && new Date().getDate() === day;
+                grid.innerHTML += `
+                    <div class="relative bg-white p-2 min-h-[120px]">
+                        <time datetime="${year}-${month + 1}-${day}" class="${isToday ? 'bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center' : ''}">${day}</time>
+                        <div class="mt-1 text-xs"></div>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderWeekView(date, grid) {
+            grid.className = 'grid grid-cols-1 md:grid-cols-7 gap-px bg-gray-200 border border-gray-200';
+            const startOfWeek = new Date(date);
+            startOfWeek.setDate(date.getDate() - date.getDay());
+            
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(startOfWeek);
+                day.setDate(startOfWeek.getDate() + i);
+                const isToday = new Date().toDateString() === day.toDateString();
+                
+                grid.innerHTML += `
+                    <div class="bg-white p-2 min-h-[200px]">
+                        <div class="text-center font-semibold ${isToday ? 'text-green-600' : ''}">
+                            ${day.toLocaleString('default', { weekday: 'short' })}
+                            <span class="ml-2 ${isToday ? 'bg-green-600 text-white rounded-full w-6 h-6 inline-flex items-center justify-center' : ''}">${day.getDate()}</span>
+                        </div>
+                        <div class="mt-2 text-xs"></div>
+                    </div>
+                `;
+            }
+        }
+        
+        function previousCalendarMonth() {
+            currentViewDate.setMonth(currentViewDate.getMonth() - 1);
+            renderCalendar();
+        }
+        
+        function nextCalendarMonth() {
+            currentViewDate.setMonth(currentViewDate.getMonth() + 1);
+            renderCalendar();
+        }
+        
+        function goToToday() {
+            currentViewDate = new Date();
+            renderCalendar();
+        }
+        
+        // ========================================================================
+        // MANAGE BOOKINGS
+        // ========================================================================
+        
+        async function fetchBookings() {
+            const result = await apiCall('getBookings');
+            if (result.success) {
+                renderBookings(result.bookings);
+            }
+        }
+        
+        function renderBookings(bookings) {
+            const container = document.getElementById('bookings-list');
+            if (!bookings || bookings.length === 0) {
+                container.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-gray-500">No upcoming bookings.</td></tr>';
+                return;
+            }
+            
+            container.innerHTML = bookings.map(booking => `
+                <tr class="hover:bg-gray-50">
+                    <td class="py-4 px-6">${booking.title}</td>
+                    <td class="py-4 px-6">${new Date(booking.start).toLocaleString()}</td>
+                    <td class="py-4 px-6">${booking.guests.join(', ')}</td>
+                    <td class="py-4 px-6">${booking.location || 'N/A'}</td>
+                    <td class="py-4 px-6">
+                        <button onclick="cancelBooking('${booking.id}')" class="text-red-600 hover:text-red-800 font-medium">Cancel</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        async function cancelBooking(bookingId) {
+            if (confirm('Are you sure you want to cancel this booking? This will notify the guest.')) {
+                const result = await apiCall('cancelBooking', { bookingId: bookingId });
+                if (result.success) {
+                    showNotification('Booking cancelled successfully', 'success');
+                    fetchBookings(); // Refresh list
+                }
+            }
+        }
+        
+        // ========================================================================
+        // MANAGE SERVICES
+        // ========================================================================
+        
+        function renderServices() {
+            const container = document.getElementById('services-list');
+            const services = window.USER_DATA.config.services || [];
+            
+            if (services.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No services configured yet. Add your first service!</p>';
+                return;
+            }
+            
+            container.innerHTML = services.map((service, index) => `
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center">
+                    <div>
+                        <h4 class="font-bold text-lg">${service.name}</h4>
+                        <p class="text-sm text-gray-600">${service.duration} min - $${service.price}</p>
+                        <p class="text-xs text-gray-500">${service.description}</p>
+                    </div>
+                    <div>
+                        <button onclick="showServiceModal(${index})" class="text-blue-600 hover:text-blue-800 mr-4">Edit</button>
+                        <button onclick="deleteService(${index})" class="text-red-600 hover:text-red-800">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function showServiceModal(index = null) {
+            const modal = document.getElementById('service-modal');
+            const form = document.getElementById('service-form');
+            form.reset();
+            document.getElementById('service-index').value = index;
+            
+            if (index !== null) {
+                const service = window.USER_DATA.config.services[index];
+                document.getElementById('service-name').value = service.name;
+                document.getElementById('service-description').value = service.description;
+                document.getElementById('service-duration').value = service.duration;
+                document.getElementById('service-price').value = service.price;
+                document.getElementById('service-meeting-link').value = service.meetingLink || '';
+            }
+            
+            modal.classList.remove('hidden');
+        }
+        
+        function hideServiceModal() {
+            document.getElementById('service-modal').classList.add('hidden');
+        }
+        
+        async function saveService(event) {
+            event.preventDefault();
+            const index = document.getElementById('service-index').value;
+            const services = [...(window.USER_DATA.config.services || [])];
+            
+            const newService = {
+                id: index ? services[index].id : 'service_' + Date.now(),
+                name: document.getElementById('service-name').value,
+                description: document.getElementById('service-description').value,
+                duration: parseInt(document.getElementById('service-duration').value),
+                price: parseFloat(document.getElementById('service-price').value),
+                meetingLink: document.getElementById('service-meeting-link').value,
+                enabled: true
+            };
+            
+            if (index) {
+                services[index] = newService;
+            } else {
+                services.push(newService);
+            }
+            
+            const result = await apiCall('saveServices', { services: services });
+            if (result.success) {
+                window.USER_DATA.config.services = services;
+                showNotification('Service saved successfully', 'success');
+                renderServices();
+                hideServiceModal();
+            }
+        }
+        
+        async function deleteService(index) {
+            if (confirm('Are you sure you want to delete this service?')) {
+                const services = [...window.USER_DATA.config.services];
+                services.splice(index, 1);
+                
+                const result = await apiCall('saveServices', { services: services });
+                if (result.success) {
+                    window.USER_DATA.config.services = services;
+                    showNotification('Service deleted', 'success');
+                    renderServices();
+                }
+            }
+        }
+        
+        // ========================================================================
+        // BUSINESS HOURS
+        // ========================================================================
+        
+        async function saveBusinessHours(event) {
+            event.preventDefault();
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            const businessHours = {};
+            
+            days.forEach(day => {
+                businessHours[day] = {
+                    enabled: document.getElementById(`hours-${day}-enabled`).checked,
+                    start: document.getElementById(`hours-${day}-start`).value,
+                    end: document.getElementById(`hours-${day}-end`).value
+                };
+            });
+            
+            const result = await apiCall('saveBusinessHours', { businessHours: businessHours });
+            if (result.success) {
+                window.USER_DATA.config.businessHours = businessHours;
+                showNotification('Business hours saved', 'success');
+            }
+        }
+        
+        function toggleDayAvailability(day) {
+            const isChecked = document.getElementById(`hours-${day}-enabled`).checked;
+            document.getElementById(`hours-${day}-start`).disabled = !isChecked;
+            document.getElementById(`hours-${day}-end`).disabled = !isChecked;
+        }
+        
+        // ========================================================================
+        // HOLIDAYS & BLOCKS
+        // ========================================================================
+        
+        function renderHolidays() {
+            const container = document.getElementById('holidays-list');
+            const holidays = window.USER_DATA.config.holidays || [];
+            
+            if (holidays.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">No holidays or blocked time added yet.</p>';
+                return;
+            }
+            
+            container.innerHTML = holidays.map((holiday, index) => `
+                <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center">
+                    <div>
+                        <p class="font-semibold">${holiday.name}</p>
+                        <p class="text-sm text-gray-600">${holiday.startDate} to ${holiday.endDate}</p>
+                    </div>
+                    <button onclick="removeHoliday(${index})" class="text-red-600 hover:text-red-800">Remove</button>
+                </div>
+            `).join('');
+        }
+        
+        async function addHoliday(event) {
+            event.preventDefault();
+            const holidays = [...(window.USER_DATA.config.holidays || [])];
+            
+            const newHoliday = {
+                name: document.getElementById('holiday-name').value,
+                startDate: document.getElementById('holiday-start-date').value,
+                endDate: document.getElementById('holiday-end-date').value
+            };
+            
+            holidays.push(newHoliday);
+            
+            const result = await apiCall('saveHolidays', { holidays: holidays });
+            if (result.success) {
+                window.USER_DATA.config.holidays = holidays;
+                showNotification('Holiday added', 'success');
+                renderHolidays();
+                event.target.reset();
+            }
+        }
+        
+        async function removeHoliday(index) {
+            if (confirm('Are you sure you want to remove this holiday/block?')) {
+                const holidays = [...window.USER_DATA.config.holidays];
+                holidays.splice(index, 1);
+                
+                const result = await apiCall('saveHolidays', { holidays: holidays });
+                if (result.success) {
+                    window.USER_DATA.config.holidays = holidays;
+                    showNotification('Holiday removed', 'success');
+                    renderHolidays();
+                }
+            }
+        }
+        
+        // ========================================================================
+        // SETTINGS
+        // ========================================================================
+        
+        function populateConfigFields(config) {
+            if (!config) return;
+            
+            // General
+            document.getElementById('calendar-id').value = config.calendarId || '';
+            initializeTimezone();
+            document.getElementById('timezone-select').value = config.timezone || '';
+            
+            // Payments
+            document.getElementById('payments-enabled').checked = config.paymentsEnabled || false;
+            document.getElementById('payment-processor').value = config.paymentProcessor || 'stripe';
+            document.getElementById('base-payment-link').value = config.basePaymentLink || '';
+            togglePaymentSection();
+            updatePaymentPlaceholder(config.paymentProcessor);
+            
+            // Business Hours
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            days.forEach(day => {
+                if (config.businessHours && config.businessHours[day]) {
+                    document.getElementById(`hours-${day}-enabled`).checked = config.businessHours[day].enabled;
+                    document.getElementById(`hours-${day}-start`).value = config.businessHours[day].start;
+                    document.getElementById(`hours-${day}-end`).value = config.businessHours[day].end;
+                    toggleDayAvailability(day);
+                }
+            });
+        }
+        
+        async function saveSettings(event) {
+            event.preventDefault();
+            
+            const config = {
+                calendarId: document.getElementById('calendar-id').value,
+                timezone: document.getElementById('timezone-select').value,
+                paymentsEnabled: document.getElementById('payments-enabled').checked,
+                paymentProcessor: document.getElementById('payment-processor').value,
+                basePaymentLink: document.getElementById('base-payment-link').value
+            };
+            
+            const result = await apiCall('saveConfiguration', { config: config });
+            if (result.success) {
+                // Update local state
+                Object.assign(window.USER_DATA.config, config);
+                showNotification('Settings saved successfully!', 'success');
+            }
+        }
+        
+        function initializeTimezone() {
+            const select = document.getElementById('timezone-select');
+            const timezones = Intl.supportedValuesOf('timeZone');
+            select.innerHTML = timezones.map(tz => `<option value="${tz}">${tz}</option>`).join('');
+            
+            // Try to pre-select user's timezone
+            try {
+                const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                if (timezones.includes(detected)) {
+                    select.value = detected;
+                }
+            } catch(e) { console.warn('Could not detect timezone'); }
+        }
+        
+        function updatePaymentPlaceholder(type) {
+            const input = document.getElementById('base-payment-link');
+            const placeholders = {
+                stripe: 'https://buy.stripe.com/...',
+                paypal: 'https://paypal.me/your-username',
+                custom: 'https://your-payment-provider.com/...'
+            };
+            input.placeholder = placeholders[type] || placeholders.custom;
+        }
+        
+        function togglePaymentSection() {
+            const isEnabled = document.getElementById('payments-enabled').checked;
+            document.getElementById('payment-details').style.display = isEnabled ? 'block' : 'none';
+        }
+        
+        // ========================================================================
+        // DEPLOYMENT & EMBED
+        // ========================================================================
+        
         function getWidgetUrl() {
             // Include user email in widget URL so it loads the right user's services
             const userEmail = window.USER_DATA?.user?.email || '';
@@ -1269,7 +1731,6 @@
             return GOOGLE_SCRIPT_URL + '?page=widget' + emailParam;
         }
         
-        // Update all embed codes with correct URLs
         function updateEmbedCodes(silent = false) {
             const widgetUrl = getWidgetUrl();
             
@@ -1286,7 +1747,7 @@
             
             // Build full widget URL with customization parameters
             const separator = widgetUrl.includes('?') ? '&' : '?';
-            const customizedUrl = widgetUrl + separator + 
+            const customizedUrl = widgetUrl.split('?')[0] + '?' + widgetUrl.split('?')[1].split('&').filter(p => p.startsWith('user=')).join('') + separator +
                 'color=' + encodeURIComponent(color) + 
                 '&theme=' + encodeURIComponent(theme) +
                 '&width=' + encodeURIComponent(width) +
@@ -1313,7 +1774,6 @@
             }
         }
         
-        // Copy to clipboard function
         function copyToClipboard(elementId) {
             const element = document.getElementById(elementId);
             if (!element) return;
@@ -1326,536 +1786,7 @@
                 showNotification('Failed to copy', 'error');
             });
         }
-
-        // REMOVED: attemptAutoLogin() - no more redirects to script.google.com
-        // All authentication happens via fetch() in the background
-
-        function getSessionFromHash() {
-            console.log('=== GET SESSION FROM HASH ===');
-            console.log('window.location.hash:', window.location.hash);
-            console.log('window.location.href:', window.location.href);
-            
-            if (window.location.hash && window.location.hash.startsWith('#session=')) {
-                const token = window.location.hash.substring('#session='.length);
-                console.log('✅ Found session token in URL hash');
-                console.log('Token length:', token ? token.length : 0);
-                console.log('Token (first 30 chars):', token ? token.substring(0, 30) + '...' : 'EMPTY');
-                
-                // Clean the URL hash after extracting the token
-                if (token) {
-                    localStorage.setItem('swell_session', token);
-                    console.log('✅ Saved token to localStorage');
-                    // Remove the hash from URL for cleaner appearance
-                    history.replaceState(null, null, window.location.pathname);
-                    console.log('✅ Cleaned URL hash');
-                }
-                return token;
-            }
-            
-            const stored = localStorage.getItem('swell_session');
-            console.log('Checking localStorage for token:', stored ? 'FOUND' : 'NOT FOUND');
-            if (stored) {
-                console.log('Token from localStorage (first 30 chars):', stored.substring(0, 30) + '...');
-            }
-            return stored;
-        }
-
-        async function fetchUserData() {
-            console.log('=== FETCH USER DATA DEBUG ===');
-            console.log('Current URL:', window.location.href);
-            console.log('Full search params:', window.location.search);
-            
-            // Get Gmail from URL params
-            const urlParams = new URLSearchParams(window.location.search);
-            const gmail = urlParams.get('gmail');
-            const apiKey = urlParams.get('apiKey');
-            const deploymentUrl = urlParams.get('deploymentUrl');
-            
-            console.log('URL Params extracted:');
-            console.log('   gmail:', gmail);
-            console.log('   apiKey:', apiKey ? 'Yes' : 'No');
-            console.log('   deploymentUrl:', deploymentUrl);
-            
-            if (!gmail && !apiKey) {
-                console.log('❌ No Gmail or API key found in URL. Redirecting to login...');
-                console.log('   This means the URL params were lost or never passed');
-                window.location.href = 'index.html';
-                return;
-            }
-            
-            console.log('✅ Found Gmail:', gmail);
-            console.log('✅ Found API key:', apiKey ? 'Yes' : 'No');
-            
-            if (gmail) localStorage.setItem('swell_user_gmail', gmail);
-            if (apiKey) localStorage.setItem('swell_api_key', apiKey);
-            
-            // Clean up URL params now that we've stored them
-            if (window.location.search) {
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
-            
-            // Simple: Just show the email as the user name
-            document.getElementById('user-name').textContent = gmail.split('@')[0];
-            document.getElementById('user-email').textContent = gmail;
-            
-            const adminEmailDisplay = document.getElementById('admin-email-display');
-            if (adminEmailDisplay) {
-                adminEmailDisplay.textContent = gmail;
-            }
-            const adminEmailInput = document.getElementById('admin-email');
-            if (adminEmailInput) {
-                adminEmailInput.value = gmail;
-            }
-            
-            // Set avatar
-            const avatarImg = document.getElementById('user-avatar');
-            avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(gmail)}&background=0D8ABC&color=fff`;
-            avatarImg.style.display = 'block';
-            document.getElementById('user-avatar-placeholder').style.display = 'none';
-
-            try {
-                console.log('📡 Fetching user data from:', GOOGLE_SCRIPT_URL);
-                
-                // Prefer API key, fall back to Gmail
-                const storedApiKey = localStorage.getItem('swell_api_key') || apiKey;
-                const storedGmail = localStorage.getItem('swell_user_gmail') || gmail;
-                
-                // Use JSONP to avoid CORS issues
-                const userData = await new Promise((resolve, reject) => {
-                    const callbackName = 'jsonpCallback_' + Date.now();
-                    window[callbackName] = (data) => {
-                        delete window[callbackName];
-                        document.body.removeChild(script);
-                        resolve(data);
-                    };
-                    
-                    let url;
-                    if (storedApiKey) {
-                        console.log('Using API key authentication');
-                        url = `${GOOGLE_SCRIPT_URL}?action=getUserData&apiKey=${encodeURIComponent(storedApiKey)}&callback=${callbackName}`;
-                    } else if (storedGmail) {
-                        console.log('Using Gmail authentication');
-                        url = `${GOOGLE_SCRIPT_URL}?action=getUserData&gmail=${encodeURIComponent(storedGmail)}&callback=${callbackName}`;
-                        if (apiKey) {
-                            url += `&storeApiKey=${encodeURIComponent(apiKey)}`;
-                        }
-                    } else {
-                        reject(new Error('No authentication credentials available'));
-                        return;
-                    }
-                    
-                    const script = document.createElement('script');
-                    script.src = url;
-                    script.onerror = () => {
-                        delete window[callbackName];
-                        document.body.removeChild(script);
-                        reject(new Error('Failed to load script'));
-                    };
-                    document.body.appendChild(script);
-                    
-                    // Timeout after 30 seconds
-                    setTimeout(() => {
-                        if (window[callbackName]) {
-                            delete window[callbackName];
-                            if (script.parentNode) {
-                                document.body.removeChild(script);
-                            }
-                            reject(new Error('Request timeout'));
-                        }
-                    }, 30000);
-                });
-                
-                console.log('✅ User data:', userData);
-
-                if (userData && userData.success) {
-                    // Store the token for future API calls
-                    if (userData.token) {
-                        localStorage.setItem('swell_session', userData.token);
-                    }
-                    
-
-                    // Populate configuration fields if config data exists
-                    if (userData.config) {
-                        console.log('✅ Populating configuration fields');
-                        populateConfigFields(userData.config);
-                    }
-                    
-                    console.log('✅ UI updated successfully');
-                } else {
-                    console.error('❌ Invalid user data structure:', userData);
-                    alert('Login failed: Invalid user data received. Please try refreshing the page.');
-                }
-            } catch (error) {
-                console.error('❌ Error fetching user data:', error);
-                console.error('❌ Error stack:', error.stack);
-                alert('Login failed: ' + error.message + '\n\nPlease check the console for details.');
-            }
-        }
         
-        // NEW FUNCTION: Populate configuration fields with data from backend
-        function populateConfigFields(config) {
-            console.log('Populating config fields:', config);
-            
-            // Calendar ID
-            const calendarIdInput = document.getElementById('calendar-id');
-            if (calendarIdInput && config.calendarId) {
-                calendarIdInput.value = config.calendarId;
-            }
-            
-            // Timezone
-            const timezoneSelect = document.getElementById('business-timezone');
-            if (timezoneSelect && config.timezone) {
-                timezoneSelect.value = config.timezone;
-            }
-            
-            // Payment enabled toggle
-            const paymentsEnabledCheckbox = document.getElementById('payments-enabled');
-            const paymentConfigSection = document.getElementById('payment-config-section');
-            
-            // Check if payment link exists to determine if payments are enabled
-            const paymentsEnabled = config.basePaymentLink && config.basePaymentLink.trim() !== '';
-            
-            if (paymentsEnabledCheckbox) {
-                paymentsEnabledCheckbox.checked = paymentsEnabled;
-            }
-            
-            if (paymentConfigSection) {
-                paymentConfigSection.style.display = paymentsEnabled ? 'block' : 'none';
-            }
-            
-            // Payment processor
-            if (config.paymentProcessor) {
-                updatePaymentPlaceholder(config.paymentProcessor);
-            }
-            
-            // Base payment link
-            const paymentLinkInput = document.getElementById('base-payment-link');
-            if (paymentLinkInput && config.basePaymentLink) {
-                paymentLinkInput.value = config.basePaymentLink;
-            }
-            
-            // Business hours
-            if (config.businessHours) {
-                Object.keys(config.businessHours).forEach(day => {
-                    const dayConfig = config.businessHours[day];
-                    const enabledCheckbox = document.getElementById(`${day}-enabled`);
-                    const startInput = document.getElementById(`${day}-start`);
-                    const endInput = document.getElementById(`${day}-end`);
-                    
-                    if (enabledCheckbox) {
-                        enabledCheckbox.checked = dayConfig.enabled;
-                    }
-                    if (startInput && dayConfig.start) {
-                        startInput.value = dayConfig.start;
-                        startInput.disabled = !dayConfig.enabled;
-                    }
-                    if (endInput && dayConfig.end) {
-                        endInput.value = dayConfig.end;
-                        endInput.disabled = !dayConfig.enabled;
-                    }
-                    
-                    // Update visual state
-                    const container = enabledCheckbox ? enabledCheckbox.closest('.availability-available, .availability-blocked') : null;
-                    if (container) {
-                        if (dayConfig.enabled) {
-                            container.classList.remove('availability-blocked');
-                            container.classList.add('availability-available');
-                        } else {
-                            container.classList.remove('availability-available');
-                            container.classList.add('availability-blocked');
-                        }
-                    }
-                });
-            }
-            
-            // Services
-            if (config.services && Array.isArray(config.services)) {
-                services = config.services;
-                renderServices();
-            }
-            
-            // Holidays
-            if (config.holidays && Array.isArray(config.holidays)) {
-                holidays = config.holidays;
-                renderHolidays();
-            }
-            
-            console.log('✅ Configuration fields populated');
-        }
-        
-        // Render services list (placeholder - you'll need to implement this)
-        function renderServices() {
-            console.log('Rendering services:', services);
-            // TODO: Implement service rendering logic
-        }
-        
-        // Render services list
-        function renderServices() {
-            console.log('Rendering services:', services);
-            // Services are managed directly in the config form
-            // Future enhancement: dynamic service cards
-        }
-        
-        // Render holidays list
-        function renderHolidays() {
-            const holidayList = document.getElementById('holiday-list');
-            const emptyState = document.getElementById('holidays-empty-state');
-            
-            if (holidays.length === 0) {
-                holidayList.innerHTML = '';
-                emptyState.style.display = 'block';
-                return;
-            }
-            
-            emptyState.style.display = 'none';
-            holidayList.innerHTML = holidays.map((holiday, index) => `
-                <div class="admin-card p-6 rounded-2xl">
-                    <div class="flex justify-between items-center">
-                        <div class="flex-1">
-                            <h4 class="text-lg font-bold text-gray-800 mb-2">${holiday.name}</h4>
-                            <p class="text-gray-600">
-                                <i data-lucide="calendar" class="w-4 h-4 inline mr-1"></i>
-                                ${holiday.startDate}${holiday.endDate !== holiday.startDate ? ' to ' + holiday.endDate : ''}
-                            </p>
-                        </div>
-                        <button onclick="removeHoliday(${index})" class="bg-red-500 hover:bg-red-600 px-4 py-2 text-white rounded-lg font-semibold text-sm transition-colors">
-                            <i data-lucide="trash-2" class="w-4 h-4 mr-1 inline"></i>
-                            Remove
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-            
-            // Reinitialize Lucide icons
-            lucide.createIcons();
-        }
-
-        // Business Hours Functions
-        function toggleDayAvailability(day) {
-            const checkbox = document.getElementById(`${day}-enabled`);
-            const startInput = document.getElementById(`${day}-start`);
-            const endInput = document.getElementById(`${day}-end`);
-            const container = checkbox.closest('.availability-available, .availability-blocked');
-            
-            const isEnabled = checkbox.checked;
-            
-            if (startInput) startInput.disabled = !isEnabled;
-            if (endInput) endInput.disabled = !isEnabled;
-            
-            if (container) {
-                if (isEnabled) {
-                    container.classList.remove('availability-blocked');
-                    container.classList.add('availability-available');
-                } else {
-                    container.classList.remove('availability-available');
-                    container.classList.add('availability-blocked');
-                }
-            }
-            
-            console.log(`${day} availability:`, isEnabled ? 'enabled' : 'disabled');
-        }
-
-        // Save Business Hours
-        document.addEventListener('DOMContentLoaded', function() {
-            const saveHoursBtn = document.getElementById('save-hours-btn');
-            if (saveHoursBtn) {
-                saveHoursBtn.addEventListener('click', async function() {
-                    const businessHours = {};
-                    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-                    
-                    days.forEach(day => {
-                        const enabled = document.getElementById(`${day}-enabled`)?.checked || false;
-                        const start = document.getElementById(`${day}-start`)?.value || '09:00';
-                        const end = document.getElementById(`${day}-end`)?.value || '17:00';
-                        
-                        businessHours[day] = { enabled, start, end };
-                    });
-                    
-                    console.log('Saving business hours:', businessHours);
-                    showNotification('Business hours saved successfully!', 'success');
-                    
-                    // TODO: Send to backend
-                    // await saveConfiguration({ businessHours });
-                });
-            }
-        });
-
-        // Holiday Functions
-        document.addEventListener('DOMContentLoaded', function() {
-            const addHolidayBtn = document.getElementById('add-holiday-btn');
-            if (addHolidayBtn) {
-                addHolidayBtn.addEventListener('click', function() {
-                    const name = document.getElementById('holiday-name')?.value;
-                    const startDate = document.getElementById('holiday-start')?.value;
-                    const endDate = document.getElementById('holiday-end')?.value;
-                    
-                    if (!name || !startDate || !endDate) {
-                        showNotification('Please fill in all holiday fields', 'error');
-                        return;
-                    }
-                    
-                    holidays.push({ name, startDate, endDate });
-                    renderHolidays();
-                    
-                    // Clear form
-                    document.getElementById('holiday-name').value = '';
-                    document.getElementById('holiday-start').value = '';
-                    document.getElementById('holiday-end').value = '';
-                    
-                    showNotification('Holiday block added successfully!', 'success');
-                    
-                    // TODO: Send to backend
-                    // await saveConfiguration({ holidays });
-                });
-            }
-        });
-
-        function removeHoliday(index) {
-            if (confirm('Are you sure you want to remove this holiday block?')) {
-                holidays.splice(index, 1);
-                renderHolidays();
-                showNotification('Holiday block removed', 'success');
-                
-                // TODO: Send to backend
-                // await saveConfiguration({ holidays });
-            }
-        }
-
-        // Calendar View Functions
-        let currentCalendarDate = new Date();
-        let currentCalendarView = 'month';
-
-        function previousCalendarMonth() {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
-            renderCalendar();
-        }
-
-        function nextCalendarMonth() {
-            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
-            renderCalendar();
-        }
-
-        function goToToday() {
-            currentCalendarDate = new Date();
-            renderCalendar();
-        }
-
-        function changeCalendarView() {
-            const viewSelect = document.getElementById('calendar-view');
-            currentCalendarView = viewSelect.value;
-            
-            // Hide all views
-            document.getElementById('month-view').classList.add('hidden');
-            document.getElementById('week-view').classList.add('hidden');
-            document.getElementById('day-view').classList.add('hidden');
-            
-            // Show selected view
-            if (currentCalendarView === 'month') {
-                document.getElementById('month-view').classList.remove('hidden');
-                renderCalendar();
-            } else if (currentCalendarView === 'week') {
-                document.getElementById('week-view').classList.remove('hidden');
-                renderWeekView();
-            } else if (currentCalendarView === 'day') {
-                document.getElementById('day-view').classList.remove('hidden');
-                renderDayView();
-            }
-        }
-
-        function renderCalendar() {
-            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                              'July', 'August', 'September', 'October', 'November', 'December'];
-            
-            document.getElementById('current-calendar-month').textContent = 
-                `${monthNames[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`;
-            
-            const firstDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1);
-            const lastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0);
-            const startingDayOfWeek = firstDay.getDay();
-            const monthLength = lastDay.getDate();
-            
-            const calendarGrid = document.getElementById('calendar-grid');
-            calendarGrid.innerHTML = '';
-            
-            // Fill in previous month's days
-            const prevMonthLastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 0).getDate();
-            for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-                const dayCell = createDayCell(prevMonthLastDay - i, true, false);
-                calendarGrid.appendChild(dayCell);
-            }
-            
-            // Fill in current month's days
-            const today = new Date();
-            for (let day = 1; day <= monthLength; day++) {
-                const isToday = today.getDate() === day && 
-                               today.getMonth() === currentCalendarDate.getMonth() && 
-                               today.getFullYear() === currentCalendarDate.getFullYear();
-                const dayCell = createDayCell(day, false, isToday);
-                calendarGrid.appendChild(dayCell);
-            }
-            
-            // Fill in next month's days
-            const remainingCells = 42 - (startingDayOfWeek + monthLength);
-            for (let day = 1; day <= remainingCells; day++) {
-                const dayCell = createDayCell(day, true, false);
-                calendarGrid.appendChild(dayCell);
-            }
-        }
-
-        function createDayCell(day, isOtherMonth, isToday) {
-            const cell = document.createElement('div');
-            cell.className = `p-4 rounded-xl border-2 min-h-[100px] ${
-                isOtherMonth ? 'bg-gray-50 border-gray-200 opacity-50' : 
-                isToday ? 'bg-emerald-50 border-emerald-300' : 
-                'bg-white border-emerald-100 hover:border-emerald-300 cursor-pointer'
-            }`;
-            
-            cell.innerHTML = `
-                <div class="font-bold text-gray-800 mb-2">${day}</div>
-                <div class="text-xs text-gray-500">
-                    <!-- Booking info will go here -->
-                </div>
-            `;
-            
-            return cell;
-        }
-
-        function renderWeekView() {
-            const weekGrid = document.getElementById('week-grid');
-            weekGrid.innerHTML = '<div class="admin-card p-8 rounded-2xl text-center"><p class="text-gray-600">Week view coming soon</p></div>';
-        }
-
-        function renderDayView() {
-            const dayGrid = document.getElementById('day-grid');
-            dayGrid.innerHTML = '<div class="admin-card p-8 rounded-2xl text-center"><p class="text-gray-600">Day view coming soon</p></div>';
-        }
-
-        // Initialize calendar when calendar section is shown
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize calendar on first load if calendar section is visible
-            setTimeout(() => {
-                if (!document.getElementById('calendar').classList.contains('hidden')) {
-                    renderCalendar();
-                }
-            }, 100);
-        });
-
-        // Call fetchUserData on page load
-        // CRITICAL: Extract token from hash IMMEDIATELY before anything else
-        if (window.location.hash && window.location.hash.startsWith('#session=')) {
-            const token = window.location.hash.substring('#session='.length);
-            console.log('⚡ IMMEDIATE hash detection on page load');
-            console.log('Token length:', token ? token.length : 0);
-            if (token) {
-                localStorage.setItem('swell_session', token);
-                console.log('✅ Token saved to localStorage immediately');
-            }
-        }
-        
-        window.onload = function() {
-            initializeTimezone();
-            renderCalendar();
-        }
-    </script>
-</body>
+        </script>
+    </body>
 </html>
