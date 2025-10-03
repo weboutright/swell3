@@ -92,6 +92,28 @@ function doGet(e) {
   const action = e.parameter.action;
   const callback = e.parameter.callback;
   
+  // Handle getUserData via GET (for CORS compatibility)
+  if (action === 'getUserData') {
+    const token = e.parameter.token;
+    return getUserData(token);
+  }
+  
+  // Handle getConfiguration via GET
+  if (action === 'getConfiguration') {
+    const token = e.parameter.token;
+    return getConfiguration(token);
+  }
+  
+  // Handle getServices via GET
+  if (action === 'getServices') {
+    return getPublicServices();
+  }
+  
+  // Handle getAvailability via GET
+  if (action === 'getAvailability') {
+    return getAvailability(e.parameter.date, e.parameter.serviceId);
+  }
+  
   // Handle login redirect
   if (action === 'login') {
     return handleLogin(e.parameter.redirectUrl);

@@ -1317,15 +1317,10 @@
                 console.log('📡 Fetching user data from:', GOOGLE_SCRIPT_URL);
                 console.log('Token (first 20 chars):', session.substring(0, 20) + '...');
                 
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'getUserData',
-                        token: session
-                    })
+                // Use GET request for CORS compatibility
+                const url = `${GOOGLE_SCRIPT_URL}?action=getUserData&token=${encodeURIComponent(session)}`;
+                const response = await fetch(url, {
+                    method: 'GET'
                 });
                 
                 console.log('📥 Response status:', response.status);
