@@ -510,21 +510,26 @@
                                     </label>
                                     <input type="number" class="w-full p-3 premium-input rounded-lg font-medium" placeholder="0.00" step="0.01">
                                 </div>
-                                <!-- Meeting Link -->
+                                <!-- Meeting Link (Optional) -->
                                 <div class="space-y-2">
-                                    <label class="block text-sm font-bold text-gray-800 flex items-center">
-                                        <i data-lucide="video" class="w-3 h-3 mr-2 text-emerald-600"></i>
-                                        Meeting Link
+                                    <label class="block text-sm font-bold text-gray-800 flex items-center justify-between">
+                                        <span class="flex items-center">
+                                            <i data-lucide="video" class="w-3 h-3 mr-2 text-emerald-600"></i>
+                                            Meeting Link
+                                        </span>
+                                        <span class="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">Optional</span>
                                     </label>
-                                    <input type="url" class="w-full p-3 premium-input rounded-lg font-medium" placeholder="e.g., https://zoom.us/j/...">
+                                    <input type="url" class="w-full p-3 premium-input rounded-lg font-medium" placeholder="e.g., https://zoom.us/j/... or leave blank for in-person">
                                 </div>
                             </div>
                             
                             <div class="mt-6 pt-4 border-t border-emerald-100">
-                                <p class="text-xs text-gray-500 mb-4 flex items-center">
-                                    <i data-lucide="info" class="w-3 h-3 mr-1"></i>
-                                    Optional: Permanent link for virtual meetings. Leave blank for in-person services.
-                                </p>
+                                <div class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded-lg mb-4">
+                                    <p class="text-xs text-blue-800 flex items-start">
+                                        <i data-lucide="info" class="w-3 h-3 mr-2 mt-0.5 flex-shrink-0"></i>
+                                        <span><strong>Meeting Link is optional.</strong> Add a Zoom, Google Meet, or Teams link for virtual services. Leave blank for in-person appointments or phone consultations.</span>
+                                    </p>
+                                </div>
                                 <div class="flex justify-end">
                                     <button class="btn-premium px-6 py-3 text-sm font-bold rounded-xl text-white shadow-lg flex items-center">
                                         <i data-lucide="save" class="w-4 h-4 mr-2"></i>
