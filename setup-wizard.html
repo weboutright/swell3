@@ -813,10 +813,10 @@
                 return;
             }
             
-            // TODO: Replace this with your actual CODE2.gs URL
-            const AUTH_HUB_URL = 'YOUR_CODE2_GS_URL_HERE';
+            // CODE2.gs Authentication Hub URL
+            const AUTH_HUB_URL = 'https://script.google.com/macros/s/AKfycbz61JIlj9F-84byXh6OjxkM62prukzqJWSKyqhzw8DHliQRijPXmUzlgy14c9CPHfzzAA/exec';
             
-            if (AUTH_HUB_URL === 'YOUR_CODE2_GS_URL_HERE' || !AUTH_HUB_URL) {
+            if (!AUTH_HUB_URL) {
                 errorDiv.innerHTML = '⚠️ Registration service not configured yet.<br>For now, skip to the next step and use your deployment URL directly.';
                 errorDiv.classList.remove('hidden');
                 
