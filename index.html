@@ -563,12 +563,7 @@
 
         function loginWithGoogle() {
             closeLoginModal();
-            // Construct the redirect URL to point to admin.html
-            const redirectUrl = window.location.origin + window.location.pathname.replace('index.html', 'admin.html');
-            // Construct the authentication URL with action and redirectUrl
-            const authUrl = `${GOOGLE_SCRIPT_URL}?action=login&redirectUrl=${encodeURIComponent(redirectUrl)}`;
-            // Redirect to the authentication URL
-            window.location.href = authUrl;
+            window.location.href = GOOGLE_SCRIPT_URL + '?page=admin';
         }
 
         // Close modal when clicking outside
