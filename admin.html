@@ -1248,10 +1248,10 @@
             console.log('✅ GOOGLE_SCRIPT_URL initialized:', GOOGLE_SCRIPT_URL);
             
             if (GOOGLE_SCRIPT_URL) {
-                // Now that we have the URL, update embed codes
-                updateEmbedCodes();
-                // Fetch user data
+                // Fetch user data FIRST (so USER_DATA is available)
                 await fetchUserData();
+                // Now that we have the URL AND user data, update embed codes (silently on init)
+                updateEmbedCodes(true);
             }
         })();
         
@@ -1259,13 +1259,26 @@
         function getWidgetUrl() {
             // Include user email in widget URL so it loads the right user's services
             const userEmail = window.USER_DATA?.user?.email || '';
-            const emailParam = userEmail ? '&user=' + encodeURIComponent(userEmail) : '';
+            
+            if (!userEmail) {
+                console.warn('⚠️ User email not available yet for widget URL');
+                return GOOGLE_SCRIPT_URL + '?page=widget';
+            }
+            
+            const emailParam = '&user=' + encodeURIComponent(userEmail);
             return GOOGLE_SCRIPT_URL + '?page=widget' + emailParam;
         }
         
         // Update all embed codes with correct URLs
-        function updateEmbedCodes() {
+        function updateEmbedCodes(silent = false) {
             const widgetUrl = getWidgetUrl();
+            
+            // Check if widget URL has user parameter
+            if (!widgetUrl.includes('user=')) {
+                console.warn('⚠️ Widget URL missing user parameter, will retry after user data loads');
+                return;
+            }
+            
             const width = document.getElementById('widget-width')?.value || '100%';
             const height = document.getElementById('widget-height')?.value || '600px';
             const color = document.getElementById('widget-color')?.value || '#059669';
@@ -1281,16 +1294,23 @@
             
             // Update iframe code
             const iframeCode = `<iframe src="${customizedUrl}" width="${width}" height="${height}" frameborder="0"></iframe>`;
-            document.getElementById('iframe-code').textContent = iframeCode;
+            const iframeElement = document.getElementById('iframe-code');
+            if (iframeElement) iframeElement.textContent = iframeCode;
             
             // Update direct link
-            document.getElementById('link-code').textContent = customizedUrl;
+            const linkElement = document.getElementById('link-code');
+            if (linkElement) linkElement.textContent = customizedUrl;
             
             // Update WordPress shortcode
             const wpCode = `[swell_booking url="${customizedUrl}" width="${width}" height="${height}"]`;
-            document.getElementById('wp-code').textContent = wpCode;
+            const wpElement = document.getElementById('wp-code');
+            if (wpElement) wpElement.textContent = wpCode;
             
-            showNotification('Embed codes updated!', 'success');
+            if (!silent) {
+                showNotification('Embed codes updated!', 'success');
+            } else {
+                console.log('✅ Embed codes initialized with user parameter');
+            }
         }
         
         // Copy to clipboard function
