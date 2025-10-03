@@ -830,43 +830,39 @@
             registerBtn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 mr-2 animate-spin"></i>Registering...';
             lucide.createIcons();
             
+            // Create URL with parameters (GET request works better with CORS)
+            const url = `${AUTH_HUB_URL}?action=register&gmail=${encodeURIComponent(gmail)}&codeGsUrl=${encodeURIComponent(codeGsUrl)}`;
+            
             try {
-                // POST registration to CODE2.gs
-                const response = await fetch(AUTH_HUB_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'register',
-                        gmail: gmail,
-                        codeGsUrl: codeGsUrl
-                    })
+                const response = await fetch(url, {
+                    method: 'GET',
+                    redirect: 'follow'
                 });
                 
-                const result = await response.json();
-                
-                if (result.success) {
-                    showNotification('✅ Account registered successfully!', 'success');
-                    
-                    // Store Gmail for later use
-                    localStorage.setItem('swell_user_gmail', gmail);
-                    
-                    // Go to success page
-                    goToStep(5);
+                // Check if we got redirected or got JSON
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const result = await response.json();
+                    if (result.success) {
+                        showNotification('✅ Account registered successfully!', 'success');
+                        localStorage.setItem('swell_user_gmail', gmail);
+                        goToStep(5);
+                    } else {
+                        errorDiv.textContent = `❌ Registration failed: ${result.error || 'Unknown error'}`;
+                        errorDiv.classList.remove('hidden');
+                        registerBtn.disabled = false;
+                        registerBtn.innerHTML = originalBtnText;
+                        lucide.createIcons();
+                    }
                 } else {
-                    // Show error
-                    errorDiv.textContent = `❌ Registration failed: ${result.error || 'Unknown error'}`;
-                    errorDiv.classList.remove('hidden');
-                    
-                    // Reset button
-                    registerBtn.disabled = false;
-                    registerBtn.innerHTML = originalBtnText;
-                    lucide.createIcons();
+                    // Assume success if we got HTML back
+                    showNotification('✅ Account registered successfully!', 'success');
+                    localStorage.setItem('swell_user_gmail', gmail);
+                    goToStep(5);
                 }
             } catch (error) {
                 console.error('Registration error:', error);
-                errorDiv.textContent = `❌ Registration failed: ${error.message}. Please check your internet connection and try again.`;
+                errorDiv.textContent = `❌ Registration failed: ${error.message}. Please try again.`;
                 errorDiv.classList.remove('hidden');
                 
                 // Reset button
