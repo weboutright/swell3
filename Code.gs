@@ -94,8 +94,25 @@ function doGet(e) {
   
   // Handle getUserData via GET (for CORS compatibility)
   if (action === 'getUserData') {
+    // Accept token, gmail, OR apiKey parameter
     const token = e.parameter.token;
-    return getUserData(token);
+    const gmail = e.parameter.gmail;
+    const apiKey = e.parameter.apiKey;
+    
+    if (apiKey) {
+      // API key authentication (most secure)
+      return getUserDataByApiKey(apiKey);
+    } else if (gmail) {
+      // Simple gmail-based lookup (backward compatibility)
+      // Pass API key from URL if available, so it can be stored
+      const apiKeyFromUrl = e.parameter.storeApiKey;
+      return getUserDataByGmail(gmail, apiKeyFromUrl);
+    } else if (token) {
+      // Token-based auth (backward compatibility)
+      return getUserData(token);
+    } else {
+      return jsonResponse({ success: false, error: 'API key, Gmail, or token required' }, 400);
+    }
   }
   
   // Handle getConfiguration via GET
@@ -730,6 +747,159 @@ function getUserData(token) {
     Logger.log('getUserData error: ' + error);
     return jsonResponse({ success: false, error: error.message }, 401);
   }
+}
+
+/**
+ * Simplified getUserData that accepts Gmail directly (no token required)
+ * Used when CODE2.gs redirects with Gmail parameter
+ * @param {string} email - User's email address
+ * @param {string} apiKeyToStore - Optional API key to store for this user
+ */
+function getUserDataByGmail(email, apiKeyToStore) {
+  try {
+    // Auto-initialize user if they don't exist
+    const userEmail = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.USER_EMAIL);
+    
+    // Store API key if provided
+    if (apiKeyToStore) {
+      USER_PROPERTIES.setProperty('API_KEY', apiKeyToStore);
+      Logger.log('✅ Stored API key for user: ' + email);
+    }
+    
+    if (!userEmail) {
+      // Initialize new user
+      USER_PROPERTIES.setProperties({
+        [USER_CONFIG_KEYS.USER_EMAIL]: email,
+        [USER_CONFIG_KEYS.CREATED_AT]: new Date().toISOString(),
+        [USER_CONFIG_KEYS.CALENDAR_ID]: email,
+        [USER_CONFIG_KEYS.TIMEZONE]: Session.getScriptTimeZone(),
+        [USER_CONFIG_KEYS.USERNAME]: email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, ''),
+        [USER_CONFIG_KEYS.BUSINESS_HOURS]: JSON.stringify({
+          monday: { enabled: true, start: '09:00', end: '17:00' },
+          tuesday: { enabled: true, start: '09:00', end: '17:00' },
+          wednesday: { enabled: true, start: '09:00', end: '17:00' },
+          thursday: { enabled: true, start: '09:00', end: '17:00' },
+          friday: { enabled: true, start: '09:00', end: '17:00' },
+          saturday: { enabled: false, start: '09:00', end: '17:00' },
+          sunday: { enabled: false, start: '09:00', end: '17:00' }
+        }),
+        [USER_CONFIG_KEYS.SERVICES]: JSON.stringify([
+          {
+            id: '1',
+            name: 'Consultation',
+            description: '30-minute consultation call',
+            duration: 30,
+            price: 50,
+            enabled: true
+          }
+        ]),
+        [USER_CONFIG_KEYS.HOLIDAYS]: JSON.stringify([])
+      });
+    }
+    
+    // Get all user configuration
+    const calendarId = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.CALENDAR_ID) || email;
+    const timezone = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.TIMEZONE) || Session.getScriptTimeZone();
+    const paymentProcessor = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.PAYMENT_PROCESSOR) || 'stripe';
+    const basePaymentLink = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.BASE_PAYMENT_LINK) || '';
+    
+    const businessHoursStr = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.BUSINESS_HOURS);
+    const servicesStr = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.SERVICES);
+    const holidaysStr = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.HOLIDAYS);
+    
+    let businessHours = null;
+    try {
+      businessHours = businessHoursStr ? JSON.parse(businessHoursStr) : null;
+    } catch (e) {
+      Logger.log('Error parsing business hours: ' + e);
+    }
+    
+    let services = [];
+    try {
+      services = servicesStr ? JSON.parse(servicesStr) : [];
+    } catch (e) {
+      Logger.log('Error parsing services: ' + e);
+    }
+    
+    let holidays = [];
+    try {
+      holidays = holidaysStr ? JSON.parse(holidaysStr) : [];
+    } catch (e) {
+      Logger.log('Error parsing holidays: ' + e);
+    }
+    
+    // Create a simple session token for this user
+    const token = createSessionToken(email);
+    const payload = parseTokenPayload(token);
+    
+    return jsonResponse({
+      success: true,
+      user: {
+        name: email.split('@')[0],
+        email: email,
+        avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(email)}&background=0D8ABC&color=fff`
+      },
+      config: {
+        calendarId: calendarId,
+        timezone: timezone,
+        paymentProcessor: paymentProcessor,
+        basePaymentLink: basePaymentLink,
+        businessHours: businessHours,
+        services: services,
+        holidays: holidays
+      },
+      token: token,
+      exp: payload.exp
+    });
+  } catch (error) {
+    Logger.log('getUserDataByGmail error: ' + error);
+    return jsonResponse({ success: false, error: error.message }, 500);
+  }
+}
+
+/**
+ * API Key based authentication - most secure method
+ * Used when admin.html has stored API key from registration/login
+ */
+function getUserDataByApiKey(apiKey) {
+  try {
+    // Validate API key format
+    if (!apiKey || !apiKey.startsWith('sk_')) {
+      return jsonResponse({ success: false, error: 'Invalid API key format' }, 401);
+    }
+    
+    // Get API key from user properties
+    const storedApiKey = USER_PROPERTIES.getProperty('API_KEY');
+    
+    if (!storedApiKey) {
+      return jsonResponse({ success: false, error: 'No API key configured. Please re-register.' }, 401);
+    }
+    
+    if (storedApiKey !== apiKey) {
+      return jsonResponse({ success: false, error: 'Invalid API key' }, 401);
+    }
+    
+    // API key valid - get user email
+    const email = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.USER_EMAIL);
+    
+    if (!email) {
+      return jsonResponse({ success: false, error: 'User not initialized' }, 401);
+    }
+    
+    // Return user data using existing function
+    return getUserDataByGmail(email);
+    
+  } catch (error) {
+    Logger.log('getUserDataByApiKey error: ' + error);
+    return jsonResponse({ success: false, error: error.message }, 401);
+  }
+}
+
+/**
+ * Store API key during user initialization
+ */
+function storeApiKey(apiKey) {
+  USER_PROPERTIES.setProperty('API_KEY', apiKey);
 }
 
 // ============================================================================

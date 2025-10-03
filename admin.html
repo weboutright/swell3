@@ -1174,15 +1174,14 @@
                 return storedUrl;
             }
             
-            // If CODE2.gs is configured, try to look up deployment URL by Google login
-            if (AUTH_HUB_URL && AUTH_HUB_URL !== '') {
-                console.log('No deployment URL in localStorage. Checking CODE2.gs...');
-                // Redirect to CODE2.gs login - it will look up URL and redirect back here
-                window.location.href = `${AUTH_HUB_URL}?action=login`;
-                return null; // Will redirect before this returns
-            }
+            // No deployment URL - redirect to login page
+            console.error('No deployment URL found. Please sign in.');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
             
-            // No URL found and no CODE2.gs - redirect to setup wizard
+            // Show friendly message
+
             console.error('No deployment URL found. Redirecting to setup wizard...');
             setTimeout(() => {
                 window.location.href = 'setup-wizard.html';
@@ -1257,12 +1256,8 @@
             });
         }
 
-        function attemptAutoLogin() {
-            const redirectUrl = encodeURIComponent(window.location.href);
-            const loginUrl = `${GOOGLE_SCRIPT_URL}?action=login&redirectUrl=${redirectUrl}`;
-            console.log('Redirecting to login:', loginUrl);
-            window.location.href = loginUrl;
-        }
+        // REMOVED: attemptAutoLogin() - no more redirects to script.google.com
+        // All authentication happens via fetch() in the background
 
         function getSessionFromHash() {
             console.log('=== GET SESSION FROM HASH ===');
@@ -1295,75 +1290,86 @@
         }
 
         async function fetchUserData() {
-            const session = getSessionFromHash();
             console.log('=== FETCH USER DATA DEBUG ===');
-            console.log('Session from hash/URL:', session);
             console.log('Current URL:', window.location.href);
-            console.log('Current hash:', window.location.hash);
-            console.log('LocalStorage token:', localStorage.getItem('swell_session'));
-
-            if (!session) {
-                console.log('❌ No session found. Attempting auto-login with Google...');
-                // Auto-login: Redirect to Google Apps Script to authenticate
-                attemptAutoLogin();
+            
+            // Get Gmail from URL params
+            const urlParams = new URLSearchParams(window.location.search);
+            const gmail = urlParams.get('gmail');
+            const apiKey = urlParams.get('apiKey');
+            
+            if (!gmail && !apiKey) {
+                console.log('❌ No Gmail or API key found in URL. Redirecting to login...');
+                window.location.href = 'index.html';
                 return;
             }
-
-            // Store session for persistence
-            localStorage.setItem('swell_session', session);
-            console.log('✅ Stored session in localStorage');
+            
+            console.log('✅ Found Gmail:', gmail);
+            console.log('✅ Found API key:', apiKey ? 'Yes' : 'No');
+            
+            if (gmail) localStorage.setItem('swell_user_gmail', gmail);
+            if (apiKey) localStorage.setItem('swell_api_key', apiKey);
+            
+            // Simple: Just show the email as the user name
+            document.getElementById('user-name').textContent = gmail.split('@')[0];
+            document.getElementById('user-email').textContent = gmail;
+            
+            const adminEmailDisplay = document.getElementById('admin-email-display');
+            if (adminEmailDisplay) {
+                adminEmailDisplay.textContent = gmail;
+            }
+            const adminEmailInput = document.getElementById('admin-email');
+            if (adminEmailInput) {
+                adminEmailInput.value = gmail;
+            }
+            
+            // Set avatar
+            const avatarImg = document.getElementById('user-avatar');
+            avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(gmail)}&background=0D8ABC&color=fff`;
+            avatarImg.style.display = 'block';
+            document.getElementById('user-avatar-placeholder').style.display = 'none';
 
             try {
                 console.log('📡 Fetching user data from:', GOOGLE_SCRIPT_URL);
-                console.log('Token (first 20 chars):', session.substring(0, 20) + '...');
                 
-                // Use GET request for CORS compatibility
-                const url = `${GOOGLE_SCRIPT_URL}?action=getUserData&token=${encodeURIComponent(session)}`;
-                const response = await fetch(url, {
-                    method: 'GET'
-                });
+                // Prefer API key, fall back to Gmail
+                const storedApiKey = localStorage.getItem('swell_api_key') || apiKey;
+                const storedGmail = localStorage.getItem('swell_user_gmail') || gmail;
                 
-                console.log('📥 Response status:', response.status);
-                console.log('📥 Response ok:', response.ok);
-                console.log('📥 Response headers:', [...response.headers.entries()]);
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('❌ HTTP error response body:', errorText);
-                    throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+                let url;
+                if (storedApiKey) {
+                    // Use API key authentication (most secure)
+                    console.log('Using API key authentication');
+                    url = `${GOOGLE_SCRIPT_URL}?action=getUserData&apiKey=${encodeURIComponent(storedApiKey)}`;
+                } else if (storedGmail) {
+                    // Fall back to Gmail authentication
+                    console.log('Using Gmail authentication');
+                    url = `${GOOGLE_SCRIPT_URL}?action=getUserData&gmail=${encodeURIComponent(storedGmail)}`;
+                    
+                    // If we have an API key from URL, pass it so Code.gs can store it
+                    if (apiKey) {
+                        url += `&storeApiKey=${encodeURIComponent(apiKey)}`;
+                    }
+                } else {
+                    throw new Error('No authentication credentials available');
                 }
                 
-                const responseText = await response.text();
-                console.log('📥 Raw response text:', responseText);
+                const response = await fetch(url, { method: 'GET' });
                 
-                const userData = JSON.parse(responseText);
-                console.log('✅ User data parsed:', userData);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const userData = await response.json();
+                console.log('✅ User data:', userData);
 
-                if (userData && userData.success && userData.user) {
-                    console.log('✅ Valid user data, updating UI');
-                    
-                    // Update sidebar user info
-                    document.getElementById('user-name').textContent = userData.user.name || 'User';
-                    document.getElementById('user-email').textContent = userData.user.email;
-
-                    // Populate the admin email field
-                    const adminEmailDisplay = document.getElementById('admin-email-display');
-                    if (adminEmailDisplay) {
-                        adminEmailDisplay.textContent = userData.user.email;
-                    }
-                    const adminEmailInput = document.getElementById('admin-email');
-                    if (adminEmailInput) {
-                        adminEmailInput.value = userData.user.email;
-                    }
-
-                    // Update avatar
-                    if (userData.user.avatarUrl) {
-                        const avatarImg = document.getElementById('user-avatar');
-                        avatarImg.src = userData.user.avatarUrl;
-                        avatarImg.style.display = 'block';
-                        document.getElementById('user-avatar-placeholder').style.display = 'none';
+                if (userData && userData.success) {
+                    // Store the token for future API calls
+                    if (userData.token) {
+                        localStorage.setItem('swell_session', userData.token);
                     }
                     
+
                     // Populate configuration fields if config data exists
                     if (userData.config) {
                         console.log('✅ Populating configuration fields');
