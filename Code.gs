@@ -92,27 +92,37 @@ function doGet(e) {
   const action = e.parameter.action;
   const callback = e.parameter.callback;
   
-  // Handle getUserData via GET (for CORS compatibility)
+  // Handle getUserData via GET (for CORS compatibility and JSONP)
   if (action === 'getUserData') {
     // Accept token, gmail, OR apiKey parameter
     const token = e.parameter.token;
     const gmail = e.parameter.gmail;
     const apiKey = e.parameter.apiKey;
     
+    let result;
     if (apiKey) {
       // API key authentication (most secure)
-      return getUserDataByApiKey(apiKey);
+      result = getUserDataByApiKey(apiKey);
     } else if (gmail) {
       // Simple gmail-based lookup (backward compatibility)
       // Pass API key from URL if available, so it can be stored
       const apiKeyFromUrl = e.parameter.storeApiKey;
-      return getUserDataByGmail(gmail, apiKeyFromUrl);
+      result = getUserDataByGmail(gmail, apiKeyFromUrl);
     } else if (token) {
       // Token-based auth (backward compatibility)
-      return getUserData(token);
+      result = getUserData(token);
     } else {
-      return jsonResponse({ success: false, error: 'API key, Gmail, or token required' }, 400);
+      result = jsonResponse({ success: false, error: 'API key, Gmail, or token required' }, 400);
     }
+    
+    // If callback parameter exists, wrap response in JSONP
+    if (callback) {
+      const jsonData = result.getContent();
+      return ContentService.createTextOutput(callback + '(' + jsonData + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    
+    return result;
   }
   
   // Handle getConfiguration via GET
@@ -507,7 +517,17 @@ function doPost(e) {
       case 'cancelBooking': return cancelBooking(data.bookingId, data.token);
       case 'getAvailability': return getAvailability(data.date, data.serviceId);
       case 'getServices': return getPublicServices();
-      case 'getUserData': return getUserData(data.token);
+      case 'getUserData': 
+        // Support multiple authentication methods
+        if (data.apiKey) {
+          return getUserDataByApiKey(data.apiKey);
+        } else if (data.gmail) {
+          return getUserDataByGmail(data.gmail, data.storeApiKey);
+        } else if (data.token) {
+          return getUserData(data.token);
+        } else {
+          return jsonResponse({ success: false, error: 'API key, Gmail, or token required' }, 400);
+        }
       case 'getAnalytics': return getAnalytics(data.startDate, data.endDate, data.token);
       case 'refreshToken': return refreshToken(data.token);
       case 'issueToken': return issueToken();

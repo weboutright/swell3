@@ -1357,31 +1357,51 @@
                 const storedApiKey = localStorage.getItem('swell_api_key') || apiKey;
                 const storedGmail = localStorage.getItem('swell_user_gmail') || gmail;
                 
-                let url;
-                if (storedApiKey) {
-                    // Use API key authentication (most secure)
-                    console.log('Using API key authentication');
-                    url = `${GOOGLE_SCRIPT_URL}?action=getUserData&apiKey=${encodeURIComponent(storedApiKey)}`;
-                } else if (storedGmail) {
-                    // Fall back to Gmail authentication
-                    console.log('Using Gmail authentication');
-                    url = `${GOOGLE_SCRIPT_URL}?action=getUserData&gmail=${encodeURIComponent(storedGmail)}`;
+                // Use JSONP to avoid CORS issues
+                const userData = await new Promise((resolve, reject) => {
+                    const callbackName = 'jsonpCallback_' + Date.now();
+                    window[callbackName] = (data) => {
+                        delete window[callbackName];
+                        document.body.removeChild(script);
+                        resolve(data);
+                    };
                     
-                    // If we have an API key from URL, pass it so Code.gs can store it
-                    if (apiKey) {
-                        url += `&storeApiKey=${encodeURIComponent(apiKey)}`;
+                    let url;
+                    if (storedApiKey) {
+                        console.log('Using API key authentication');
+                        url = `${GOOGLE_SCRIPT_URL}?action=getUserData&apiKey=${encodeURIComponent(storedApiKey)}&callback=${callbackName}`;
+                    } else if (storedGmail) {
+                        console.log('Using Gmail authentication');
+                        url = `${GOOGLE_SCRIPT_URL}?action=getUserData&gmail=${encodeURIComponent(storedGmail)}&callback=${callbackName}`;
+                        if (apiKey) {
+                            url += `&storeApiKey=${encodeURIComponent(apiKey)}`;
+                        }
+                    } else {
+                        reject(new Error('No authentication credentials available'));
+                        return;
                     }
-                } else {
-                    throw new Error('No authentication credentials available');
-                }
+                    
+                    const script = document.createElement('script');
+                    script.src = url;
+                    script.onerror = () => {
+                        delete window[callbackName];
+                        document.body.removeChild(script);
+                        reject(new Error('Failed to load script'));
+                    };
+                    document.body.appendChild(script);
+                    
+                    // Timeout after 30 seconds
+                    setTimeout(() => {
+                        if (window[callbackName]) {
+                            delete window[callbackName];
+                            if (script.parentNode) {
+                                document.body.removeChild(script);
+                            }
+                            reject(new Error('Request timeout'));
+                        }
+                    }, 30000);
+                });
                 
-                const response = await fetch(url, { method: 'GET' });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const userData = await response.json();
                 console.log('✅ User data:', userData);
 
                 if (userData && userData.success) {
