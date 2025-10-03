@@ -1104,12 +1104,25 @@
         })();
         
         async function getGoogleScriptUrl() {
+            // 1. Try to get from URL query parameter first
+            const urlParams = new URLSearchParams(window.location.search);
+            const scriptUrlFromQuery = urlParams.get('scriptUrl');
+            if (scriptUrlFromQuery) {
+                console.log('Found script URL in query parameter.');
+                // Save it to localStorage for future visits
+                localStorage.setItem('google_script_url', scriptUrlFromQuery);
+                // Clean the URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+                return scriptUrlFromQuery;
+            }
+
+            // 2. Fallback to localStorage
             const storedUrl = localStorage.getItem('google_script_url');
             if (storedUrl) {
                 return storedUrl;
             }
             
-            // If not found, redirect to setup
+            // 3. If not found anywhere, show setup message
             document.body.innerHTML = `
                 <div style="font-family: system-ui; max-width: 600px; margin: 100px auto; padding: 20px; text-align: center;">
                     <h1 style="color: #047857; margin-bottom: 20px;">👋 Welcome to Swell!</h1>
@@ -1124,7 +1137,7 @@
                     </p>
                 </div>
             `;
-            // window.location.href = 'setup-wizard.html';
+            setTimeout(() => { window.location.href = 'setup-wizard.html'; }, 4000);
             return null;
         }
         
