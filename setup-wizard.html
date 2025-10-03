@@ -236,6 +236,29 @@
                     </div>
                 </div>
 
+                <div class="bg-white rounded-2xl p-6 border-2 border-blue-100">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                            <span class="text-blue-700 font-bold">3</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-bold text-gray-900 mb-3">📅 Enable Google Calendar API (IMPORTANT!)</h3>
+                            <p class="text-gray-700 mb-3">Your booking system needs access to Google Calendar to create appointments:</p>
+                            <ol class="list-decimal list-inside space-y-2 text-gray-700 ml-4">
+                                <li>In the Apps Script editor, click the <strong>⊕ Services</strong> button on the left sidebar</li>
+                                <li>Scroll down and find <strong>"Google Calendar API"</strong></li>
+                                <li>Click <strong>Add</strong></li>
+                                <li>You should see "CalendarApp" appear in your services list</li>
+                            </ol>
+                            <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                                <p class="text-sm text-blue-800">
+                                    <strong>💡 Tip:</strong> If you don't see the Services button, look for a <strong>+</strong> icon next to "Services" in the left panel.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-2xl p-6 border-l-4 border-yellow-400">
                     <p class="text-gray-700 flex items-start">
                         <i data-lucide="alert-triangle" class="w-5 h-5 mr-2 text-yellow-600 flex-shrink-0 mt-0.5"></i>
@@ -494,7 +517,8 @@
         let userDeploymentUrl = '';
         
         // CODE2.gs Authentication Hub URL - Update this with YOUR deployed CODE2.gs URL
-        const AUTH_HUB_URL = 'YOUR_CODE2_DEPLOYMENT_URL_HERE';
+        // Set to empty string to skip registration during setup
+        const AUTH_HUB_URL = '';
         
         // Load Code.gs on page load
         window.onload = function() {
@@ -633,44 +657,10 @@
             userDeploymentUrl = url;
             localStorage.setItem('swell_deployment_url', url);
             
-            // Register deployment with CODE2.gs auth hub
-            await registerDeploymentWithAuthHub(url);
+            showNotification('✅ Deployment URL saved!', 'success');
             
+            // Go straight to completion step
             goToStep(4);
-        }
-        
-        async function registerDeploymentWithAuthHub(deploymentUrl) {
-            // Skip if AUTH_HUB_URL is not configured
-            if (!AUTH_HUB_URL || AUTH_HUB_URL === 'YOUR_CODE2_DEPLOYMENT_URL_HERE') {
-                console.log('AUTH_HUB_URL not configured - skipping registration');
-                return;
-            }
-            
-            try {
-                showNotification('Registering your deployment...', 'info');
-                
-                // Call CODE2.gs to register this deployment
-                const registerUrl = `${AUTH_HUB_URL}?action=register&deploymentUrl=${encodeURIComponent(deploymentUrl)}`;
-                
-                const response = await fetch(registerUrl, {
-                    method: 'GET',
-                    credentials: 'include' // Include auth cookies
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    showNotification('✅ Deployment registered successfully!', 'success');
-                    console.log('Deployment registered:', result);
-                } else {
-                    console.warn('Registration returned false:', result);
-                    showNotification('⚠️ Registration warning - you may need to register manually', 'error');
-                }
-            } catch (error) {
-                console.error('Error registering deployment:', error);
-                // Don't block the flow - they can register manually later
-                showNotification('⚠️ Could not auto-register. You can complete setup and login manually.', 'error');
-            }
         }
         
         async function testDeployment() {

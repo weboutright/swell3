@@ -1152,14 +1152,19 @@
             document.getElementById('payment-type-label').textContent = label;
         }
 
+        // CODE2.gs URL for deployment lookup (optional)
+        const AUTH_HUB_URL = ''; // Update this with your CODE2.gs deployment URL
+        
         // IMPORTANT: Get the deployment URL from the wizard setup
         // Each user has their own deployment URL after completing setup
-        function getGoogleScriptUrl() {
-            // Check if URL is in query string (from wizard redirect)
+        async function getGoogleScriptUrl() {
+            // Check if URL is in query string (from wizard redirect or CODE2.gs)
             const urlParams = new URLSearchParams(window.location.search);
             const urlFromQuery = urlParams.get('deploymentUrl');
             if (urlFromQuery) {
                 localStorage.setItem('swell_deployment_url', urlFromQuery);
+                // Remove query param from URL bar for cleaner look
+                window.history.replaceState({}, document.title, window.location.pathname);
                 return urlFromQuery;
             }
             
@@ -1169,17 +1174,49 @@
                 return storedUrl;
             }
             
-            // No URL found - redirect to setup wizard
+            // If CODE2.gs is configured, try to look up deployment URL by Google login
+            if (AUTH_HUB_URL && AUTH_HUB_URL !== '') {
+                console.log('No deployment URL in localStorage. Checking CODE2.gs...');
+                // Redirect to CODE2.gs login - it will look up URL and redirect back here
+                window.location.href = `${AUTH_HUB_URL}?action=login`;
+                return null; // Will redirect before this returns
+            }
+            
+            // No URL found and no CODE2.gs - redirect to setup wizard
             console.error('No deployment URL found. Redirecting to setup wizard...');
             setTimeout(() => {
-                if (confirm('You need to complete the setup first.\n\nRedirect to setup wizard now?')) {
-                    window.location.href = 'setup-wizard.html';
-                }
-            }, 1000);
+                window.location.href = 'setup-wizard.html';
+            }, 2000);
+            
+            // Show friendly message while redirecting
+            document.body.innerHTML = `
+                <div style="font-family: system-ui; max-width: 600px; margin: 100px auto; padding: 20px; text-align: center;">
+                    <h1 style="color: #047857; margin-bottom: 20px;">👋 Welcome to Swell!</h1>
+                    <p style="color: #666; font-size: 18px; margin-bottom: 30px;">
+                        It looks like you haven't set up your booking system yet.
+                    </p>
+                    <p style="color: #888;">Redirecting to setup wizard...</p>
+                    <p style="margin-top: 30px;">
+                        <a href="setup-wizard.html" style="color: #059669; text-decoration: none; font-weight: bold;">
+                            Click here if not redirected automatically →
+                        </a>
+                    </p>
+                </div>
+            `;
             return null;
         }
         
-        const GOOGLE_SCRIPT_URL = getGoogleScriptUrl();
+        // Initialize - this will be async now
+        let GOOGLE_SCRIPT_URL = null;
+        
+        // Call async function immediately
+        (async () => {
+            GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
+            if (GOOGLE_SCRIPT_URL) {
+                console.log('✅ Connected to backend:', GOOGLE_SCRIPT_URL);
+                // Initialize the app here if needed
+            }
+        })();
         
         // Generate widget URL for current user
         function getWidgetUrl() {

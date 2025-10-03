@@ -90,6 +90,21 @@ This is a **single-file, per-user booking system** where each user deploys ONE f
 4. Paste it into the Apps Script editor
 5. Name your project: "My Booking System"
 
+### Step 1.5: Enable Google Calendar API (REQUIRED!)
+
+⚠️ **IMPORTANT:** Your booking system needs Calendar API access to create appointments!
+
+1. In the Apps Script editor, look for **Services** in the left sidebar
+2. Click the **⊕** (plus) button next to Services
+3. Scroll down to find **"Google Calendar API"**
+4. Click **Add**
+5. Verify "CalendarApp" appears in your services list
+
+**Without this step, bookings will fail!** The Calendar API is required for:
+- Creating calendar events for new bookings
+- Checking availability
+- Sending calendar invites to customers
+
 ### Step 2: Deploy as Web App
 
 1. Click **Deploy** → **New deployment**
