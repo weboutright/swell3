@@ -1248,15 +1248,10 @@
             console.log('✅ GOOGLE_SCRIPT_URL initialized:', GOOGLE_SCRIPT_URL);
             
             if (GOOGLE_SCRIPT_URL) {
-                // Now that we have the URL, fetch user data
+                // Now that we have the URL, update embed codes
+                updateEmbedCodes();
+                // Fetch user data
                 await fetchUserData();
-            }
-        })();
-        (async () => {
-            GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
-            if (GOOGLE_SCRIPT_URL) {
-                console.log('✅ Connected to backend:', GOOGLE_SCRIPT_URL);
-                // Initialize the app here if needed
             }
         })();
         
@@ -1570,10 +1565,247 @@
         
         // Render holidays list
         function renderHolidays() {
-            console.log('Rendering holidays:', holidays);
-            // Holidays are managed directly in the config form
-            // Future enhancement: dynamic holiday cards
+            const holidayList = document.getElementById('holiday-list');
+            const emptyState = document.getElementById('holidays-empty-state');
+            
+            if (holidays.length === 0) {
+                holidayList.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            holidayList.innerHTML = holidays.map((holiday, index) => `
+                <div class="admin-card p-6 rounded-2xl">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1">
+                            <h4 class="text-lg font-bold text-gray-800 mb-2">${holiday.name}</h4>
+                            <p class="text-gray-600">
+                                <i data-lucide="calendar" class="w-4 h-4 inline mr-1"></i>
+                                ${holiday.startDate}${holiday.endDate !== holiday.startDate ? ' to ' + holiday.endDate : ''}
+                            </p>
+                        </div>
+                        <button onclick="removeHoliday(${index})" class="bg-red-500 hover:bg-red-600 px-4 py-2 text-white rounded-lg font-semibold text-sm transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4 mr-1 inline"></i>
+                            Remove
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // Reinitialize Lucide icons
+            lucide.createIcons();
         }
+
+        // Business Hours Functions
+        function toggleDayAvailability(day) {
+            const checkbox = document.getElementById(`${day}-enabled`);
+            const startInput = document.getElementById(`${day}-start`);
+            const endInput = document.getElementById(`${day}-end`);
+            const container = checkbox.closest('.availability-available, .availability-blocked');
+            
+            const isEnabled = checkbox.checked;
+            
+            if (startInput) startInput.disabled = !isEnabled;
+            if (endInput) endInput.disabled = !isEnabled;
+            
+            if (container) {
+                if (isEnabled) {
+                    container.classList.remove('availability-blocked');
+                    container.classList.add('availability-available');
+                } else {
+                    container.classList.remove('availability-available');
+                    container.classList.add('availability-blocked');
+                }
+            }
+            
+            console.log(`${day} availability:`, isEnabled ? 'enabled' : 'disabled');
+        }
+
+        // Save Business Hours
+        document.addEventListener('DOMContentLoaded', function() {
+            const saveHoursBtn = document.getElementById('save-hours-btn');
+            if (saveHoursBtn) {
+                saveHoursBtn.addEventListener('click', async function() {
+                    const businessHours = {};
+                    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                    
+                    days.forEach(day => {
+                        const enabled = document.getElementById(`${day}-enabled`)?.checked || false;
+                        const start = document.getElementById(`${day}-start`)?.value || '09:00';
+                        const end = document.getElementById(`${day}-end`)?.value || '17:00';
+                        
+                        businessHours[day] = { enabled, start, end };
+                    });
+                    
+                    console.log('Saving business hours:', businessHours);
+                    showNotification('Business hours saved successfully!', 'success');
+                    
+                    // TODO: Send to backend
+                    // await saveConfiguration({ businessHours });
+                });
+            }
+        });
+
+        // Holiday Functions
+        document.addEventListener('DOMContentLoaded', function() {
+            const addHolidayBtn = document.getElementById('add-holiday-btn');
+            if (addHolidayBtn) {
+                addHolidayBtn.addEventListener('click', function() {
+                    const name = document.getElementById('holiday-name')?.value;
+                    const startDate = document.getElementById('holiday-start')?.value;
+                    const endDate = document.getElementById('holiday-end')?.value;
+                    
+                    if (!name || !startDate || !endDate) {
+                        showNotification('Please fill in all holiday fields', 'error');
+                        return;
+                    }
+                    
+                    holidays.push({ name, startDate, endDate });
+                    renderHolidays();
+                    
+                    // Clear form
+                    document.getElementById('holiday-name').value = '';
+                    document.getElementById('holiday-start').value = '';
+                    document.getElementById('holiday-end').value = '';
+                    
+                    showNotification('Holiday block added successfully!', 'success');
+                    
+                    // TODO: Send to backend
+                    // await saveConfiguration({ holidays });
+                });
+            }
+        });
+
+        function removeHoliday(index) {
+            if (confirm('Are you sure you want to remove this holiday block?')) {
+                holidays.splice(index, 1);
+                renderHolidays();
+                showNotification('Holiday block removed', 'success');
+                
+                // TODO: Send to backend
+                // await saveConfiguration({ holidays });
+            }
+        }
+
+        // Calendar View Functions
+        let currentCalendarDate = new Date();
+        let currentCalendarView = 'month';
+
+        function previousCalendarMonth() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            renderCalendar();
+        }
+
+        function nextCalendarMonth() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            renderCalendar();
+        }
+
+        function goToToday() {
+            currentCalendarDate = new Date();
+            renderCalendar();
+        }
+
+        function changeCalendarView() {
+            const viewSelect = document.getElementById('calendar-view');
+            currentCalendarView = viewSelect.value;
+            
+            // Hide all views
+            document.getElementById('month-view').classList.add('hidden');
+            document.getElementById('week-view').classList.add('hidden');
+            document.getElementById('day-view').classList.add('hidden');
+            
+            // Show selected view
+            if (currentCalendarView === 'month') {
+                document.getElementById('month-view').classList.remove('hidden');
+                renderCalendar();
+            } else if (currentCalendarView === 'week') {
+                document.getElementById('week-view').classList.remove('hidden');
+                renderWeekView();
+            } else if (currentCalendarView === 'day') {
+                document.getElementById('day-view').classList.remove('hidden');
+                renderDayView();
+            }
+        }
+
+        function renderCalendar() {
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                              'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            document.getElementById('current-calendar-month').textContent = 
+                `${monthNames[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`;
+            
+            const firstDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 1);
+            const lastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth() + 1, 0);
+            const startingDayOfWeek = firstDay.getDay();
+            const monthLength = lastDay.getDate();
+            
+            const calendarGrid = document.getElementById('calendar-grid');
+            calendarGrid.innerHTML = '';
+            
+            // Fill in previous month's days
+            const prevMonthLastDay = new Date(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth(), 0).getDate();
+            for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+                const dayCell = createDayCell(prevMonthLastDay - i, true, false);
+                calendarGrid.appendChild(dayCell);
+            }
+            
+            // Fill in current month's days
+            const today = new Date();
+            for (let day = 1; day <= monthLength; day++) {
+                const isToday = today.getDate() === day && 
+                               today.getMonth() === currentCalendarDate.getMonth() && 
+                               today.getFullYear() === currentCalendarDate.getFullYear();
+                const dayCell = createDayCell(day, false, isToday);
+                calendarGrid.appendChild(dayCell);
+            }
+            
+            // Fill in next month's days
+            const remainingCells = 42 - (startingDayOfWeek + monthLength);
+            for (let day = 1; day <= remainingCells; day++) {
+                const dayCell = createDayCell(day, true, false);
+                calendarGrid.appendChild(dayCell);
+            }
+        }
+
+        function createDayCell(day, isOtherMonth, isToday) {
+            const cell = document.createElement('div');
+            cell.className = `p-4 rounded-xl border-2 min-h-[100px] ${
+                isOtherMonth ? 'bg-gray-50 border-gray-200 opacity-50' : 
+                isToday ? 'bg-emerald-50 border-emerald-300' : 
+                'bg-white border-emerald-100 hover:border-emerald-300 cursor-pointer'
+            }`;
+            
+            cell.innerHTML = `
+                <div class="font-bold text-gray-800 mb-2">${day}</div>
+                <div class="text-xs text-gray-500">
+                    <!-- Booking info will go here -->
+                </div>
+            `;
+            
+            return cell;
+        }
+
+        function renderWeekView() {
+            const weekGrid = document.getElementById('week-grid');
+            weekGrid.innerHTML = '<div class="admin-card p-8 rounded-2xl text-center"><p class="text-gray-600">Week view coming soon</p></div>';
+        }
+
+        function renderDayView() {
+            const dayGrid = document.getElementById('day-grid');
+            dayGrid.innerHTML = '<div class="admin-card p-8 rounded-2xl text-center"><p class="text-gray-600">Day view coming soon</p></div>';
+        }
+
+        // Initialize calendar when calendar section is shown
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize calendar on first load if calendar section is visible
+            setTimeout(() => {
+                if (!document.getElementById('calendar').classList.contains('hidden')) {
+                    renderCalendar();
+                }
+            }, 100);
+        });
 
         // Call fetchUserData on page load
         // CRITICAL: Extract token from hash IMMEDIATELY before anything else
@@ -1589,8 +1821,7 @@
         
         window.onload = function() {
             initializeTimezone();
-            updateEmbedCodes(); // Set correct widget URLs
-            // fetchUserData(); // REMOVED - now called after GOOGLE_SCRIPT_URL is initialized
+            renderCalendar();
         }
     </script>
 </body>

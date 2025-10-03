@@ -401,8 +401,8 @@ function serveWidgetPage() {
       const container = document.getElementById('services-container');
       container.style.display = 'block';
       
-      container.innerHTML = services.map(service => \`
-        <div class="service-card" onclick="selectService('\${service.name}', \${service.price}, \${service.duration})">
+      container.innerHTML = services.filter(s => s.enabled !== false).map(service => \`
+        <div class="service-card" onclick="selectService('\${service.id || service.name}', '\${service.name}', \${service.price}, \${service.duration})">
           <h3 style="font-size: 1.25rem; font-weight: 700; color: #065f46; margin-bottom: 0.5rem;">
             \${service.name}
           </h3>
@@ -412,8 +412,8 @@ function serveWidgetPage() {
       \`).join('');
     }
     
-    function selectService(name, price, duration) {
-      selectedService = { name, price, duration };
+    function selectService(id, name, price, duration) {
+      selectedService = { id, name, price, duration };
       document.querySelectorAll('.service-card').forEach(card => {
         card.classList.remove('selected');
       });
@@ -439,6 +439,11 @@ function serveWidgetPage() {
         return;
       }
       
+      // Split name into first and last
+      const nameParts = name.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || nameParts[0];
+      
       try {
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
@@ -446,9 +451,15 @@ function serveWidgetPage() {
           body: JSON.stringify({
             action: 'createBooking',
             booking: {
-              service: selectedService,
-              customer: { name, email, phone },
-              date, time, notes
+              serviceId: selectedService.id || selectedService.name,
+              service: selectedService.name,
+              firstName: firstName,
+              lastName: lastName,
+              email: email,
+              phone: phone,
+              date: date,
+              time: time,
+              notes: notes
             }
           })
         });
@@ -1039,7 +1050,8 @@ function getAvailability(dateString, serviceId) {
     
     if (!calendarId) throw new Error('Calendar not configured');
     
-    const service = services.find(s => s.id === serviceId);
+    // Find service by id or name
+    const service = services.find(s => s.id === serviceId || s.name === serviceId);
     if (!service) throw new Error('Service not found');
     
     const date = new Date(dateString);
@@ -1127,7 +1139,8 @@ function createBooking(booking) {
     
     if (!calendarId) throw new Error('Calendar not configured');
     
-    const service = services.find(s => s.id === booking.serviceId);
+    // Find service by id or name
+    const service = services.find(s => s.id === booking.serviceId || s.name === booking.serviceId);
     if (!service) throw new Error('Service not found');
     
     const calendar = CalendarApp.getCalendarById(calendarId);

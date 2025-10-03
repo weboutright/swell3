@@ -432,7 +432,7 @@
             <!-- Step 4: Confirm & Pay -->
             <div id="step-confirm" class="step-content hidden">
                 <h2 class="text-2xl font-black text-gray-800 mb-2">Confirm Your Booking</h2>
-                <p class="text-gray-600 mb-6">Review your booking details before proceeding to payment</p>
+                <p class="text-gray-600 mb-6" id="confirm-subtitle">Review your booking details before confirming</p>
                 
                 <div class="max-w-2xl space-y-4">
                     <!-- Booking Summary Card -->
@@ -488,8 +488,8 @@
                         Back
                     </button>
                     <button onclick="processBooking()" id="confirm-btn" class="btn-primary text-white px-8 py-3 rounded-xl font-bold">
-                        <i data-lucide="credit-card" class="w-5 h-5 inline mr-2"></i>
-                        Proceed to Payment
+                        <i data-lucide="check-circle" class="w-5 h-5 inline mr-2"></i>
+                        <span id="confirm-btn-text">Confirm Booking</span>
                     </button>
                 </div>
             </div>
@@ -803,7 +803,7 @@
                     body: JSON.stringify({
                         action: 'getAvailability',
                         date: dateString,
-                        serviceId: selectedService.id
+                        serviceId: selectedService.id || selectedService.name
                     })
                 });
                 
@@ -1008,6 +1008,24 @@
             } else {
                 document.getElementById('confirm-notes-container').classList.add('hidden');
             }
+            
+            // Update button text based on payment settings
+            const confirmBtn = document.getElementById('confirm-btn');
+            const confirmBtnText = document.getElementById('confirm-btn-text');
+            const confirmSubtitle = document.getElementById('confirm-subtitle');
+            
+            if (widgetConfig.paymentsEnabled && bookingData.service.price > 0) {
+                confirmBtnText.textContent = 'Proceed to Payment';
+                confirmSubtitle.textContent = 'Review your booking details before proceeding to payment';
+                confirmBtn.querySelector('i').setAttribute('data-lucide', 'credit-card');
+            } else {
+                confirmBtnText.textContent = 'Confirm Booking';
+                confirmSubtitle.textContent = 'Review your booking details before confirming';
+                confirmBtn.querySelector('i').setAttribute('data-lucide', 'check-circle');
+            }
+            
+            // Re-create icons to update the changed icon
+            lucide.createIcons();
         }
 
         async function processBooking() {
