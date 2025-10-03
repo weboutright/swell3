@@ -321,9 +321,17 @@
             if (window.location.hash && window.location.hash.startsWith('#session=')) {
                 const token = window.location.hash.substring('#session='.length);
                 console.log('Found session token in URL!');
+                console.log('Token length:', token.length);
                 localStorage.setItem('swell_session', token);
-                window.location.hash = '';
+                
+                // Clean the hash from URL
+                history.replaceState(null, null, window.location.pathname);
+                
+                // Refresh displays
+                checkURL();
                 checkStorage();
+                
+                // Auto-validate after 1 second
                 setTimeout(testTokenValidation, 1000);
             }
         };
