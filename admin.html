@@ -1135,7 +1135,8 @@
         async function getGoogleScriptUrl() {
             // Priority 1: Check URL query parameter (e.g., after setup wizard redirect)
             const urlParams = new URLSearchParams(window.location.search);
-            const scriptUrlFromQuery = urlParams.get('scriptUrl');
+            // Check for both 'deploymentUrl' (new login flow) and 'scriptUrl' (legacy) for backward compatibility
+            const scriptUrlFromQuery = urlParams.get('deploymentUrl') || urlParams.get('scriptUrl');
             if (scriptUrlFromQuery) {
                 console.log('Found script URL in query parameter, saving to localStorage.');
                 localStorage.setItem('google_script_url', scriptUrlFromQuery);
