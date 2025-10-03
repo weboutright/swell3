@@ -618,9 +618,8 @@
         
         let userDeploymentUrl = '';
         
-        // CODE2.gs Authentication Hub URL - Update this with YOUR deployed CODE2.gs URL
-        // Set to empty string to skip registration during setup
-        const AUTH_HUB_URL = '';
+        // CODE2.gs Authentication Hub URL
+        const AUTH_HUB_URL = 'https://script.google.com/macros/s/AKfycbz61JIlj9F-84byXh6OjxkM62prukzqJWSKyqhzw8DHliQRijPXmUzlgy14c9CPHfzzAA/exec';
         
         // Load Code.gs on page load
         window.onload = function() {
@@ -812,9 +811,6 @@
                 errorDiv.classList.remove('hidden');
                 return;
             }
-            
-            // CODE2.gs Authentication Hub URL
-            const AUTH_HUB_URL = 'https://script.google.com/macros/s/AKfycbz61JIlj9F-84byXh6OjxkM62prukzqJWSKyqhzw8DHliQRijPXmUzlgy14c9CPHfzzAA/exec';
             
             if (!AUTH_HUB_URL) {
                 errorDiv.innerHTML = '⚠️ Registration service not configured yet.<br>For now, skip to the next step and use your deployment URL directly.';
