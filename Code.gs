@@ -17,6 +17,7 @@ const USER_CONFIG_KEYS = {
   CALENDAR_ID: 'calendarId',
   PAYMENT_PROCESSOR: 'paymentProcessor',
   BASE_PAYMENT_LINK: 'basePaymentLink',
+  PAYMENTS_ENABLED: 'paymentsEnabled',
   BUSINESS_HOURS: 'businessHours',
   SERVICES: 'services',
   HOLIDAYS: 'holidays',
@@ -941,6 +942,9 @@ function saveConfiguration(config, token) {
     if (config.basePaymentLink !== undefined) {
       USER_PROPERTIES.setProperty(USER_CONFIG_KEYS.BASE_PAYMENT_LINK, config.basePaymentLink || '');
     }
+    if (config.paymentsEnabled !== undefined) {
+      USER_PROPERTIES.setProperty(USER_CONFIG_KEYS.PAYMENTS_ENABLED, String(config.paymentsEnabled));
+    }
     if (config.timezone) {
       USER_PROPERTIES.setProperty(USER_CONFIG_KEYS.TIMEZONE, config.timezone);
     }
@@ -971,6 +975,7 @@ function getConfiguration(token) {
       calendarId: USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.CALENDAR_ID) || '',
       paymentProcessor: USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.PAYMENT_PROCESSOR) || 'stripe',
       basePaymentLink: USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.BASE_PAYMENT_LINK) || '',
+      paymentsEnabled: USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.PAYMENTS_ENABLED) === 'true',
       businessHours: JSON.parse(USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.BUSINESS_HOURS) || '{}'),
       services: JSON.parse(USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.SERVICES) || '[]'),
       holidays: JSON.parse(USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.HOLIDAYS) || '[]'),
