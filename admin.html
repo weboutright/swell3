@@ -1207,7 +1207,16 @@
         // Initialize - this will be async now
         let GOOGLE_SCRIPT_URL = null;
         
-        // Call async function immediately
+        // Call async function immediately on page load
+        (async function initializeScriptUrl() {
+            GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
+            console.log('✅ GOOGLE_SCRIPT_URL initialized:', GOOGLE_SCRIPT_URL);
+            
+            if (GOOGLE_SCRIPT_URL) {
+                // Now that we have the URL, fetch user data
+                await fetchUserData();
+            }
+        })();
         (async () => {
             GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
             if (GOOGLE_SCRIPT_URL) {
@@ -1503,7 +1512,7 @@
         window.onload = function() {
             initializeTimezone();
             updateEmbedCodes(); // Set correct widget URLs
-            fetchUserData();
+            // fetchUserData(); // REMOVED - now called after GOOGLE_SCRIPT_URL is initialized
         }
     </script>
 </body>
