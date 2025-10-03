@@ -1104,41 +1104,43 @@
         })();
         
         async function getGoogleScriptUrl() {
-            // 1. Try to get from URL query parameter first
+            // Priority 1: Check URL query parameter (e.g., after setup wizard redirect)
             const urlParams = new URLSearchParams(window.location.search);
             const scriptUrlFromQuery = urlParams.get('scriptUrl');
             if (scriptUrlFromQuery) {
-                console.log('Found script URL in query parameter.');
-                // Save it to localStorage for future visits
+                console.log('Found script URL in query parameter, saving to localStorage.');
                 localStorage.setItem('google_script_url', scriptUrlFromQuery);
-                // Clean the URL
-                window.history.replaceState({}, document.title, window.location.pathname);
+                // Clean the URL for a better user experience, removing the query param
+                window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
                 return scriptUrlFromQuery;
             }
 
-            // 2. Fallback to localStorage
+            // Priority 2: Check localStorage for a previously saved URL
             const storedUrl = localStorage.getItem('google_script_url');
             if (storedUrl) {
+                console.log('Found script URL in localStorage.');
                 return storedUrl;
             }
             
-            // 3. If not found anywhere, show setup message
+            // If not found anywhere, guide the user to the setup wizard.
+            console.warn('Google Script URL not found. Redirecting to setup.');
             document.body.innerHTML = `
-                <div style="font-family: system-ui; max-width: 600px; margin: 100px auto; padding: 20px; text-align: center;">
-                    <h1 style="color: #047857; margin-bottom: 20px;">👋 Welcome to Swell!</h1>
-                    <p style="color: #666; font-size: 18px; margin-bottom: 30px;">
-                        It looks like you haven't set up your booking system yet.
+                <div style="font-family: system-ui; max-width: 600px; margin: 100px auto; padding: 20px; text-align: center; background: #fff; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+                    <h1 style="color: #047857; margin-bottom: 20px; font-weight: 800;">👋 Welcome to Swell!</h1>
+                    <p style="color: #374151; font-size: 18px; margin-bottom: 30px; line-height: 1.6;">
+                        It looks like your booking system isn't configured yet.
                     </p>
-                    <p style="color: #888;">Redirecting to setup wizard...</p>
-                    <p style="margin-top: 30px;">
+                    <p style="color: #6b7280; font-size: 14px;">You'll be redirected to the setup wizard shortly.</p>
+                    <p style="margin-top: 40px;">
                         <a href="setup-wizard.html" style="color: #059669; text-decoration: none; font-weight: bold;">
-                            Click here if not redirected automatically →
+                            Click here if you are not redirected automatically →
                         </a>
                     </p>
                 </div>
             `;
-            setTimeout(() => { window.location.href = 'setup-wizard.html'; }, 4000);
-            return null;
+            // Redirect after a short delay
+            setTimeout(() => { window.location.href = 'setup-wizard.html'; }, 3000);
+            return null; // Return null to stop further execution
         }
         
         function initializeAllSections() {
