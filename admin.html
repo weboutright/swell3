@@ -1270,6 +1270,17 @@
         }
 
         // Call fetchUserData on page load
+        // CRITICAL: Extract token from hash IMMEDIATELY before anything else
+        if (window.location.hash && window.location.hash.startsWith('#session=')) {
+            const token = window.location.hash.substring('#session='.length);
+            console.log('⚡ IMMEDIATE hash detection on page load');
+            console.log('Token length:', token ? token.length : 0);
+            if (token) {
+                localStorage.setItem('swell_session', token);
+                console.log('✅ Token saved to localStorage immediately');
+            }
+        }
+        
         window.onload = function() {
             initializeTimezone();
             fetchUserData();
