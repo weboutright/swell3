@@ -1089,66 +1089,46 @@
         // Call async function immediately on page load
         (async function initializeAdminPanel() {
             try {
-                // 1. Get session token. This is the most critical step.
-                const token = getSessionFromHash();
-                if (!token) {
-                    // If there is no token, the user is not authenticated. Stop everything.
-                    document.body.innerHTML = `
-                        <div class="h-screen w-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
-                            <i data-lucide="shield-off" class="w-16 h-16 text-red-500 mb-4"></i>
-                            <h1 class="text-2xl font-bold text-red-600 mb-4">Authentication Required</h1>
-                            <p class="text-gray-700">No session token found. Please log in to access the admin panel.</p>
-                        </div>
-                    `;
-                    lucide.createIcons();
-                    return;
-                }
-
-                // 2. Get the Google Script URL. This is also critical.
+                // Step 1: Get the user's personal Code.gs URL. This is essential.
                 GOOGLE_SCRIPT_URL = await getGoogleScriptUrl();
                 if (!GOOGLE_SCRIPT_URL) {
-                    // If the URL is missing, the app is not configured. Do NOT redirect.
-                    // Show a clear error and a manual link to the setup wizard.
-                    document.body.innerHTML = `
-                        <div class="h-screen w-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
-                            <i data-lucide="alert-triangle" class="w-16 h-16 text-orange-500 mb-4"></i>
-                            <h1 class="text-2xl font-bold text-orange-600 mb-4">Configuration Incomplete</h1>
-                            <p class="text-gray-700 mb-6">The backend script URL is missing. This can happen if browser data was cleared.</p>
-                            <a href="setup-wizard.html" class="btn-premium inline-flex items-center justify-center px-8 py-4 font-bold text-lg rounded-xl text-white shadow-2xl">
-                                <i data-lucide="wrench" class="w-5 h-5 mr-3"></i>
-                                Re-run Setup Wizard
-                            </a>
-                        </div>
-                    `;
-                    lucide.createIcons();
+                    // If we don't know which backend to talk to, we can't do anything.
+                    // The user needs to go through the main login flow to get their URL.
+                    console.error("Fatal: No Google Script URL found. Redirecting to main login.");
+                    // Redirect to the central site, which should handle the initial login.
+                    window.location.href = 'https://weboutright.github.io/swell3'; 
+                    return; // Stop execution
+                }
+                console.log('✅ Google Script URL found:', GOOGLE_SCRIPT_URL);
+
+                // Step 2: Get the session token for the user's backend.
+                const token = getSessionFromHash();
+                if (!token) {
+                    // If we have the script URL but no token, the user needs to log in to their backend.
+                    // The Code.gs doGet() will serve the Google Sign-In page.
+                    console.log("No session token found. Redirecting to personal login page.");
+                    window.location.href = GOOGLE_SCRIPT_URL;
+                    return; // Stop execution
+                }
+                console.log('✅ Session token found.');
+
+                // Step 3: We have the URL and a token. Fetch the user's data.
+                const userDataLoaded = await fetchUserData(token);
+                if (!userDataLoaded) {
+                    // The token might be expired or invalid.
+                    console.error("Failed to fetch user data. Token may be invalid. Redirecting to re-authenticate.");
+                    window.location.href = GOOGLE_SCRIPT_URL; // Re-login
                     return;
                 }
-                console.log('✅ GOOGLE_SCRIPT_URL initialized:', GOOGLE_SCRIPT_URL);
 
-                // 3. With token and URL, fetch user data.
-                const userDataLoaded = await fetchUserData(token);
+                // Step 4: Success! Initialize the dashboard.
+                console.log('✅ Initialization successful. Loading admin panel.');
+                initializeAllSections();
+                updateEmbedCodes(true); // Silently update embed codes on initial load
 
-                // 4. Check if user data was successfully loaded.
-                if (userDataLoaded) {
-                    // Success! Initialize all UI components.
-                    initializeAllSections();
-                    updateEmbedCodes(true); // Silently update embed codes on initial load
-                } else {
-                    // This means fetchUserData failed (e.g., invalid token, server error).
-                    throw new Error('Failed to load user data. The session may be invalid or expired. Please log in again.');
-                }
             } catch (error) {
                 console.error('Critical error during admin panel initialization:', error);
-                showNotification(error.message || 'Could not initialize the admin panel.', 'error');
-                 document.body.innerHTML = `
-                    <div class="h-screen w-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
-                        <i data-lucide="server-crash" class="w-16 h-16 text-red-500 mb-4"></i>
-                        <h1 class="text-2xl font-bold text-red-600 mb-4">Application Error</h1>
-                        <p class="text-gray-700 mb-2">An unexpected error occurred during initialization.</p>
-                        <p class="text-gray-600 text-sm font-mono p-2 bg-gray-200 rounded">${error.message}</p>
-                    </div>
-                `;
-                lucide.createIcons();
+                showNotification('An error occurred. See console for details.', 'error');
             }
         })();
         
