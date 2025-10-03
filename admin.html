@@ -1163,8 +1163,7 @@
             const urlFromQuery = urlParams.get('deploymentUrl');
             if (urlFromQuery) {
                 localStorage.setItem('swell_deployment_url', urlFromQuery);
-                // Remove query param from URL bar for cleaner look
-                window.history.replaceState({}, document.title, window.location.pathname);
+                // DON'T remove query params yet - fetchUserData needs them
                 return urlFromQuery;
             }
             
@@ -1309,6 +1308,11 @@
             
             if (gmail) localStorage.setItem('swell_user_gmail', gmail);
             if (apiKey) localStorage.setItem('swell_api_key', apiKey);
+            
+            // Clean up URL params now that we've stored them
+            if (window.location.search) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
             
             // Simple: Just show the email as the user name
             document.getElementById('user-name').textContent = gmail.split('@')[0];
