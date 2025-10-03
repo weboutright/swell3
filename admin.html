@@ -1291,14 +1291,22 @@
         async function fetchUserData() {
             console.log('=== FETCH USER DATA DEBUG ===');
             console.log('Current URL:', window.location.href);
+            console.log('Full search params:', window.location.search);
             
             // Get Gmail from URL params
             const urlParams = new URLSearchParams(window.location.search);
             const gmail = urlParams.get('gmail');
             const apiKey = urlParams.get('apiKey');
+            const deploymentUrl = urlParams.get('deploymentUrl');
+            
+            console.log('URL Params extracted:');
+            console.log('   gmail:', gmail);
+            console.log('   apiKey:', apiKey ? 'Yes' : 'No');
+            console.log('   deploymentUrl:', deploymentUrl);
             
             if (!gmail && !apiKey) {
                 console.log('❌ No Gmail or API key found in URL. Redirecting to login...');
+                console.log('   This means the URL params were lost or never passed');
                 window.location.href = 'index.html';
                 return;
             }

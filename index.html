@@ -594,17 +594,30 @@
             try {
                 // Use GET request for CORS compatibility
                 const url = `${AUTH_HUB_URL}?action=authenticate&gmail=${encodeURIComponent(gmail)}`;
+                console.log('🔍 Sending login request to:', url);
+                
                 const response = await fetch(url, {
                     method: 'GET'
                 });
                 
+                console.log('📥 Response status:', response.status);
+                console.log('📥 Response ok:', response.ok);
+                
                 const result = await response.json();
+                console.log('📦 Response data:', result);
                 
                 if (result.success) {
+                    console.log('✅ Login successful!');
+                    console.log('   Gmail:', gmail);
+                    console.log('   Code.gs URL:', result.codeGsUrl);
+                    console.log('   API Key:', result.apiKey ? 'Yes' : 'No');
+                    
                     // Redirect to admin dashboard with deployment URL, Gmail, and API key
                     const redirectUrl = 'admin.html?deploymentUrl=' + encodeURIComponent(result.codeGsUrl) + 
                                        '&gmail=' + encodeURIComponent(gmail) + 
                                        (result.apiKey ? '&apiKey=' + encodeURIComponent(result.apiKey) : '');
+                    
+                    console.log('🚀 Redirecting to:', redirectUrl);
                     window.location.href = redirectUrl;
                 } else {
                     errorDiv.textContent = result.error || 'Gmail not found. Please sign up first.';
