@@ -1163,91 +1163,33 @@
         }
 
         function getSessionFromHash() {
-            console.log('=== GET SESSION FROM HASH ===');
-            console.log('window.location.hash:', window.location.hash);
-            console.log('window.location.href:', window.location.href);
-            
-            if (window.location.hash && window.location.hash.startsWith('#session=')) {
-                const token = window.location.hash.substring('#session='.length);
-                console.log('✅ Found session token in URL hash');
-                console.log('Token length:', token ? token.length : 0);
-                console.log('Token (first 30 chars):', token ? token.substring(0, 30) + '...' : 'EMPTY');
-                
-                // Clean the URL hash after extracting the token
-                if (token) {
-                    localStorage.setItem('swell_session', token);
-                    console.log('✅ Saved token to localStorage');
-                    // Remove the hash from URL for cleaner appearance
-                    history.replaceState(null, null, window.location.pathname);
-                    console.log('✅ Cleaned URL hash');
-                }
-                return token;
-            }
-            
-            const stored = localStorage.getItem('swell_session');
-            console.log('Checking localStorage for token:', stored ? 'FOUND' : 'NOT FOUND');
-            if (stored) {
-                console.log('Token from localStorage (first 30 chars):', stored.substring(0, 30) + '...');
-            }
-            return stored;
+            return localStorage.getItem('swell_session');
         }
 
         async function fetchUserData() {
             const session = getSessionFromHash();
-            console.log('=== FETCH USER DATA DEBUG ===');
-            console.log('Session from hash/URL:', session);
-            console.log('Current URL:', window.location.href);
-            console.log('Current hash:', window.location.hash);
-            console.log('LocalStorage token:', localStorage.getItem('swell_session'));
 
             if (!session) {
-                console.log('❌ No session found. Attempting auto-login with Google...');
-                // Auto-login: Redirect to Google Apps Script to authenticate
                 attemptAutoLogin();
                 return;
             }
 
-            // Store session for persistence
-            localStorage.setItem('swell_session', session);
-            console.log('✅ Stored session in localStorage');
-
             try {
-                console.log('📡 Fetching user data from:', GOOGLE_SCRIPT_URL);
-                console.log('Token (first 20 chars):', session.substring(0, 20) + '...');
-                
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'getUserData',
-                        token: session
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'getUserData', token: session })
                 });
-                
-                console.log('📥 Response status:', response.status);
-                console.log('📥 Response ok:', response.ok);
-                console.log('📥 Response headers:', [...response.headers.entries()]);
 
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('❌ HTTP error response body:', errorText);
-                    throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+                    throw new Error('HTTP error! status: ' + response.status);
                 }
                 
-                const responseText = await response.text();
-                console.log('📥 Raw response text:', responseText);
-                
-                const userData = JSON.parse(responseText);
-                console.log('✅ User data parsed:', userData);
+                const userData = await response.json();
 
                 if (userData && userData.success && userData.user) {
-                    console.log('✅ Valid user data, updating UI');
                     document.getElementById('user-name').textContent = userData.user.name || 'User';
                     document.getElementById('user-email').textContent = userData.user.email;
-
-                    // Populate the admin email field with current logged-in user
                     document.getElementById('admin-email').value = userData.user.email;
                     document.getElementById('admin-email-display').textContent = userData.user.email;
 
@@ -1257,27 +1199,22 @@
                         avatarImg.style.display = 'block';
                         document.getElementById('user-avatar-placeholder').style.display = 'none';
                     }
-                    console.log('✅ UI updated successfully');
                 } else {
-                    console.error('❌ Invalid user data structure:', userData);
-                    alert('Login failed: Invalid user data received. Please try refreshing the page.');
+                    throw new Error('Invalid user data');
                 }
             } catch (error) {
-                console.error('❌ Error fetching user data:', error);
-                console.error('❌ Error stack:', error.stack);
-                alert('Login failed: ' + error.message + '\n\nPlease check the console for details.');
+                console.error('Error fetching user data:', error);
+                localStorage.removeItem('swell_session');
+                attemptAutoLogin();
             }
         }
 
-        // Call fetchUserData on page load
-        // CRITICAL: Extract token from hash IMMEDIATELY before anything else
+        // Extract token from hash IMMEDIATELY on script load
         if (window.location.hash && window.location.hash.startsWith('#session=')) {
             const token = window.location.hash.substring('#session='.length);
-            console.log('⚡ IMMEDIATE hash detection on page load');
-            console.log('Token length:', token ? token.length : 0);
             if (token) {
                 localStorage.setItem('swell_session', token);
-                console.log('✅ Token saved to localStorage immediately');
+                history.replaceState(null, null, window.location.pathname);
             }
         }
         
