@@ -596,54 +596,12 @@
             }
         }
         
-        // Widget configuration
+        // Widget configuration - will be loaded from API
         let widgetConfig = {
-            theme: 'modern', // modern, classic, minimal
-            primaryColor: '#065f46',
-            calendarId: 'your-calendar-id@group.calendar.google.com',
-            services: [
-                {
-                    id: 'consultation',
-                    name: '30-Min Consultation',
-                    duration: 30,
-                    price: 50,
-                    description: 'Quick consultation to discuss your needs'
-                },
-                {
-                    id: 'standard',
-                    name: '1-Hour Session',
-                    duration: 60,
-                    price: 100,
-                    description: 'Standard one-hour session'
-                },
-                {
-                    id: 'extended',
-                    name: '2-Hour Workshop',
-                    duration: 120,
-                    price: 180,
-                    description: 'Extended workshop session'
-                },
-                {
-                    id: 'package',
-                    name: 'Full Day Package',
-                    duration: 480,
-                    price: 500,
-                    description: 'Complete full-day intensive session'
-                }
-            ],
-            businessHours: {
-                monday: { enabled: true, start: '09:00', end: '17:00' },
-                tuesday: { enabled: true, start: '09:00', end: '17:00' },
-                wednesday: { enabled: true, start: '09:00', end: '17:00' },
-                thursday: { enabled: true, start: '09:00', end: '17:00' },
-                friday: { enabled: true, start: '09:00', end: '17:00' },
-                saturday: { enabled: false, start: '09:00', end: '17:00' },
-                sunday: { enabled: false, start: '09:00', end: '17:00' }
-            },
-            holidays: [
-                // Example: { date: '2025-12-25', reason: 'Christmas Day' }
-            ],
-            timeSlotInterval: 30 // minutes
+            services: [],
+            businessHours: {},
+            holidays: [],
+            paymentsEnabled: true
         };
 
         // Widget State
@@ -660,34 +618,80 @@
             lucide.createIcons();
         });
 
-        function initializeWidget() {
-            // Parse URL parameters to customize widget
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('theme')) widgetConfig.theme = params.get('theme');
-            if (params.get('color')) widgetConfig.primaryColor = params.get('color');
+        async function initializeWidget() {
+            // Load services and config from API
+            await loadServicesFromAPI();
             
             // Show timezone info if different
             showTimezoneInfo();
             
-            // Render services
-            renderServices();
-            
-            // Initialize calendar
+            // Initialize calendar (will render with default/loaded business hours)
             renderCalendar();
+        }
+        
+        async function loadServicesFromAPI() {
+            try {
+                // Load services
+                const servicesResponse = await fetch(GOOGLE_SCRIPT_URL + '?action=getServices');
+                const servicesData = await servicesResponse.json();
+                
+                if (servicesData.success && servicesData.services) {
+                    widgetConfig.services = servicesData.services.filter(s => s.enabled !== false);
+                    renderServices();
+                } else {
+                    showError('Unable to load services. Please try again later.');
+                    return;
+                }
+                
+                // Note: Business hours and holidays would need to be fetched separately
+                // For now, the availability check happens when user selects a date
+                // The backend will handle business hours validation in getAvailability
+                
+            } catch (error) {
+                console.error('Error loading services:', error);
+                showError('Connection error. Please check your internet connection.');
+            }
+        }
+        
+        function showError(message) {
+            const container = document.getElementById('services-container');
+            container.innerHTML = `
+                <div class="col-span-full text-center py-12">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="alert-circle" class="w-8 h-8 text-red-600"></i>
+                    </div>
+                    <p class="text-gray-600">${message}</p>
+                </div>
+            `;
+            lucide.createIcons();
         }
 
         function renderServices() {
             const container = document.getElementById('services-container');
+            
+            if (!widgetConfig.services || widgetConfig.services.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="calendar-x" class="w-8 h-8 text-gray-400"></i>
+                        </div>
+                        <p class="text-gray-600">No services available at this time.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+            
             container.innerHTML = widgetConfig.services.map(service => `
-                <div class="service-card p-6 rounded-2xl" onclick="selectService('${service.id}')">
+                <div class="service-card p-6 rounded-2xl" onclick="selectService('${service.id || service.name}')">
                     <div class="flex justify-between items-start mb-3">
                         <h3 class="text-lg font-bold text-gray-800">${service.name}</h3>
-                        <span class="text-emerald-600 font-black text-xl">$${service.price}</span>
+                        <span class="text-emerald-600 font-black text-xl">$${service.price || 0}</span>
                     </div>
-                    <p class="text-gray-600 text-sm mb-3">${service.description}</p>
+                    <p class="text-gray-600 text-sm mb-3">${service.description || 'Professional service'}</p>
                     <div class="flex items-center text-sm text-gray-500">
                         <i data-lucide="clock" class="w-4 h-4 mr-1"></i>
-                        <span>${service.duration} minutes</span>
+                        <span>${service.duration || 60} minutes</span>
                     </div>
                 </div>
             `).join('');
@@ -703,7 +707,7 @@
             
             // Add selection
             event.currentTarget.classList.add('selected');
-            selectedService = widgetConfig.services.find(s => s.id === serviceId);
+            selectedService = widgetConfig.services.find(s => (s.id || s.name) === serviceId);
             
             // Enable next button
             document.getElementById('service-next-btn').disabled = false;
@@ -738,24 +742,17 @@
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
                 const dateString = date.toISOString().split('T')[0];
-                const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'lowercase' });
                 
                 let classes = 'calendar-day';
+                let onclick = '';
                 
                 // Check if past date
                 if (date < today) {
                     classes += ' disabled';
+                } else {
+                    // Future dates are clickable - API will determine availability
+                    onclick = `onclick="selectDate('${dateString}')"`;
                 }
-                // Check if holiday
-                else if (widgetConfig.holidays.some(h => h.date === dateString)) {
-                    classes += ' holiday';
-                }
-                // Check if business day
-                else if (!widgetConfig.businessHours[dayOfWeek]?.enabled) {
-                    classes += ' unavailable';
-                }
-                
-                const onclick = date >= today && widgetConfig.businessHours[dayOfWeek]?.enabled ? `onclick="selectDate('${dateString}')"` : '';
                 
                 html += `<div class="${classes}" ${onclick}>${day}</div>`;
             }
@@ -1019,22 +1016,41 @@
             btn.innerHTML = '<div class="spinner inline-block"></div> Processing...';
             
             try {
-                // In production, this would:
-                // 1. Create payment link with Stripe/Square
-                // 2. Redirect to payment page
-                // 3. After payment, create calendar event
-                // 4. Send confirmation emails
+                // Create booking via API
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'createBooking',
+                        booking: {
+                            serviceId: selectedService.id || selectedService.name,
+                            service: selectedService.name,
+                            date: selectedDate,
+                            time: new Date(selectedTime).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+                            firstName: bookingData.firstName,
+                            lastName: bookingData.lastName,
+                            email: bookingData.email,
+                            phone: bookingData.phone,
+                            notes: bookingData.notes || ''
+                        }
+                    })
+                });
                 
-                // Simulate API call
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                const data = await response.json();
                 
-                // For demo, we'll skip payment and go straight to success
-                showSuccessScreen();
+                if (data.success) {
+                    showSuccessScreen();
+                } else {
+                    throw new Error(data.error || 'Booking failed');
+                }
                 
             } catch (error) {
-                alert('Booking failed. Please try again.');
+                console.error('Booking error:', error);
+                alert('Booking failed: ' + error.message + '\nPlease try again or contact support.');
                 btn.disabled = false;
-                btn.innerHTML = '<i data-lucide="credit-card" class="w-5 h-5 inline mr-2"></i> Proceed to Payment';
+                btn.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 inline mr-2"></i> Confirm Booking';
                 lucide.createIcons();
             }
         }

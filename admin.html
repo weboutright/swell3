@@ -500,7 +500,7 @@
                                         <i data-lucide="clock" class="w-3 h-3 mr-2 text-emerald-600"></i>
                                         Duration (Min)
                                     </label>
-                                    <input type="number" value="60" class="w-full p-3 premium-input rounded-lg font-medium">
+                                    <input type="number" class="w-full p-3 premium-input rounded-lg font-medium" placeholder="30" min="15" step="15">
                                 </div>
                                 <!-- Price -->
                                 <div class="space-y-2">
@@ -508,7 +508,7 @@
                                         <i data-lucide="dollar-sign" class="w-3 h-3 mr-2 text-emerald-600"></i>
                                         Price (USD)
                                     </label>
-                                    <input type="number" value="199.00" class="w-full p-3 premium-input rounded-lg font-medium">
+                                    <input type="number" class="w-full p-3 premium-input rounded-lg font-medium" placeholder="0.00" step="0.01">
                                 </div>
                                 <!-- Meeting Link -->
                                 <div class="space-y-2">
@@ -516,7 +516,7 @@
                                         <i data-lucide="video" class="w-3 h-3 mr-2 text-emerald-600"></i>
                                         Meeting Link
                                     </label>
-                                    <input type="url" value="https://zoom.us/j/1234567890" class="w-full p-3 premium-input rounded-lg font-medium" placeholder="e.g., https://zoom.us/j/...">
+                                    <input type="url" class="w-full p-3 premium-input rounded-lg font-medium" placeholder="e.g., https://zoom.us/j/...">
                                 </div>
                             </div>
                             
@@ -594,20 +594,14 @@
                     </div>
                 </div>
 
-                <!-- Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="admin-card p-8 rounded-3xl">
-                        <h3 class="text-xl font-bold text-gray-900 mb-6">Weekly Bookings</h3>
-                        <div class="chart-container h-64 rounded-xl flex items-center justify-center">
-                            <p class="text-gray-500">Chart placeholder - integrate with your preferred chart library</p>
-                        </div>
+                <!-- Charts Section - Coming Soon -->
+                <div class="admin-card p-12 rounded-3xl text-center">
+                    <div class="w-16 h-16 bg-gradient-to-br from-emerald-100 to-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i data-lucide="bar-chart-3" class="w-8 h-8 text-emerald-600"></i>
                     </div>
-                    <div class="admin-card p-8 rounded-3xl">
-                        <h3 class="text-xl font-bold text-gray-900 mb-6">Revenue Breakdown</h3>
-                        <div class="chart-container h-64 rounded-xl flex items-center justify-center">
-                            <p class="text-gray-500">Chart placeholder - integrate with your preferred chart library</p>
-                        </div>
-                    </div>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-3">Visual Analytics Coming Soon</h3>
+                    <p class="text-gray-600 mb-6">We're building beautiful charts and graphs to help you visualize your business performance.</p>
+                    <p class="text-sm text-gray-500">Use the summary cards above for real-time booking and revenue data.</p>
                 </div>
             </div>
 
@@ -1562,10 +1556,18 @@
             // TODO: Implement service rendering logic
         }
         
-        // Render holidays list (placeholder - you'll need to implement this)
+        // Render services list
+        function renderServices() {
+            console.log('Rendering services:', services);
+            // Services are managed directly in the config form
+            // Future enhancement: dynamic service cards
+        }
+        
+        // Render holidays list
         function renderHolidays() {
             console.log('Rendering holidays:', holidays);
-            // TODO: Implement holiday rendering logic
+            // Holidays are managed directly in the config form
+            // Future enhancement: dynamic holiday cards
         }
 
         // Call fetchUserData on page load
