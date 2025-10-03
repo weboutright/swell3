@@ -493,6 +493,9 @@
         
         let userDeploymentUrl = '';
         
+        // CODE2.gs Authentication Hub URL - Update this with YOUR deployed CODE2.gs URL
+        const AUTH_HUB_URL = 'YOUR_CODE2_DEPLOYMENT_URL_HERE';
+        
         // Load Code.gs on page load
         window.onload = function() {
             loadCodeGS();
@@ -609,7 +612,7 @@
             showNotification('Apps Script opened in new tab!', 'success');
         }
         
-        function validateAndContinue() {
+        async function validateAndContinue() {
             const url = document.getElementById('deployment-url').value.trim();
             
             if (!url) {
@@ -630,7 +633,44 @@
             userDeploymentUrl = url;
             localStorage.setItem('swell_deployment_url', url);
             
+            // Register deployment with CODE2.gs auth hub
+            await registerDeploymentWithAuthHub(url);
+            
             goToStep(4);
+        }
+        
+        async function registerDeploymentWithAuthHub(deploymentUrl) {
+            // Skip if AUTH_HUB_URL is not configured
+            if (!AUTH_HUB_URL || AUTH_HUB_URL === 'YOUR_CODE2_DEPLOYMENT_URL_HERE') {
+                console.log('AUTH_HUB_URL not configured - skipping registration');
+                return;
+            }
+            
+            try {
+                showNotification('Registering your deployment...', 'info');
+                
+                // Call CODE2.gs to register this deployment
+                const registerUrl = `${AUTH_HUB_URL}?action=register&deploymentUrl=${encodeURIComponent(deploymentUrl)}`;
+                
+                const response = await fetch(registerUrl, {
+                    method: 'GET',
+                    credentials: 'include' // Include auth cookies
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('✅ Deployment registered successfully!', 'success');
+                    console.log('Deployment registered:', result);
+                } else {
+                    console.warn('Registration returned false:', result);
+                    showNotification('⚠️ Registration warning - you may need to register manually', 'error');
+                }
+            } catch (error) {
+                console.error('Error registering deployment:', error);
+                // Don't block the flow - they can register manually later
+                showNotification('⚠️ Could not auto-register. You can complete setup and login manually.', 'error');
+            }
         }
         
         async function testDeployment() {
@@ -664,7 +704,11 @@
         
         function openAdminDashboard() {
             if (userDeploymentUrl) {
-                // Redirect to admin.html with deployment URL as query parameter
+                // Save to localStorage one more time to be sure
+                localStorage.setItem('swell_deployment_url', userDeploymentUrl);
+                
+                // Redirect to YOUR admin.html with their deployment URL as parameter
+                // Admin.html will use this URL to connect to THEIR Code.gs backend
                 window.location.href = `admin.html?deploymentUrl=${encodeURIComponent(userDeploymentUrl)}`;
             } else {
                 const storedUrl = localStorage.getItem('swell_deployment_url');
