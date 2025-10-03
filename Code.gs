@@ -132,14 +132,26 @@ function doGet(e) {
     return getConfiguration(token);
   }
   
-  // Handle getServices via GET
+  // Handle getServices via GET (with JSONP support)
   if (action === 'getServices') {
-    return getPublicServices();
+    const result = getPublicServices();
+    if (callback) {
+      const jsonData = result.getContent();
+      return ContentService.createTextOutput(callback + '(' + jsonData + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return result;
   }
   
-  // Handle getAvailability via GET
+  // Handle getAvailability via GET (with JSONP support)
   if (action === 'getAvailability') {
-    return getAvailability(e.parameter.date, e.parameter.serviceId);
+    const result = getAvailability(e.parameter.date, e.parameter.serviceId);
+    if (callback) {
+      const jsonData = result.getContent();
+      return ContentService.createTextOutput(callback + '(' + jsonData + ')')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return result;
   }
   
   // Handle login redirect
@@ -372,16 +384,32 @@ function serveWidgetPage() {
     const SCRIPT_URL = '${scriptUrl}';
     let selectedService = null;
     
+    // JSONP helper for cross-origin requests
+    function jsonp(url, callback) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'jsonpCallback_' + Date.now() + '_' + Math.random().toString(36).substring(7);
+        window[callbackName] = (data) => {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          resolve(data);
+        };
+        
+        const script = document.createElement('script');
+        const separator = url.includes('?') ? '&' : '?';
+        script.src = url + separator + 'callback=' + callbackName;
+        script.onerror = () => {
+          delete window[callbackName];
+          document.body.removeChild(script);
+          reject(new Error('JSONP request failed'));
+        };
+        document.body.appendChild(script);
+      });
+    }
+    
     // Load services on page load
     async function loadServices() {
       try {
-        const response = await fetch(SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'getServices' })
-        });
-        
-        const data = await response.json();
+        const data = await jsonp(SCRIPT_URL + '?action=getServices');
         
         if (data.success && data.services) {
           renderServices(data.services);
@@ -392,7 +420,7 @@ function serveWidgetPage() {
       } catch (error) {
         console.error('Error loading services:', error);
         document.getElementById('loading').innerHTML = 
-          '<p style="color: #991b1b;">Error loading services</p>';
+          '<p style="color: #991b1b;">Error loading services. Please refresh.</p>';
       }
     }
     
@@ -419,7 +447,48 @@ function serveWidgetPage() {
       });
       event.currentTarget.classList.add('selected');
       document.getElementById('booking-form').style.display = 'block';
+      
+      // Load date picker with minimum date as today
+      const dateInput = document.getElementById('booking-date');
+      const today = new Date().toISOString().split('T')[0];
+      dateInput.min = today;
+      dateInput.value = today;
+      
+      // Load time slots for today
+      loadTimeSlots(today);
     }
+    
+    // Load available time slots for selected date
+    async function loadTimeSlots(date) {
+      if (!selectedService || !date) return;
+      
+      const timeSelect = document.getElementById('booking-time');
+      timeSelect.innerHTML = '<option value="">Loading slots...</option>';
+      
+      try {
+        const data = await jsonp(SCRIPT_URL + '?action=getAvailability&date=' + date + '&serviceId=' + encodeURIComponent(selectedService.id || selectedService.name));
+        
+        if (data.success && data.availableSlots && data.availableSlots.length > 0) {
+          timeSelect.innerHTML = '<option value="">Select Time Slot</option>' + 
+            data.availableSlots.map(slot => 
+              \`<option value="\${slot.start.split('T')[1].substring(0, 5)}">\${slot.displayTime}</option>\`
+            ).join('');
+        } else {
+          timeSelect.innerHTML = '<option value="">No slots available</option>';
+        }
+      } catch (error) {
+        console.error('Error loading time slots:', error);
+        timeSelect.innerHTML = '<option value="">Error loading slots</option>';
+      }
+    }
+    
+    // Listen for date changes
+    document.addEventListener('DOMContentLoaded', function() {
+      const dateInput = document.getElementById('booking-date');
+      dateInput.addEventListener('change', function() {
+        loadTimeSlots(this.value);
+      });
+    });
     
     async function submitBooking() {
       if (!selectedService) {
@@ -444,6 +513,11 @@ function serveWidgetPage() {
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || nameParts[0];
       
+      // Disable submit button
+      const submitBtn = event.target;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Booking...';
+      
       try {
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
@@ -467,14 +541,18 @@ function serveWidgetPage() {
         const data = await response.json();
         
         if (data.success) {
-          alert('Booking confirmed! Check your email for details.');
+          alert('✅ Booking confirmed! Check your email for details.');
           location.reload();
         } else {
-          alert('Booking failed: ' + (data.error || 'Unknown error'));
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Confirm Booking';
+          alert('❌ Booking failed: ' + (data.error || 'Unknown error'));
         }
       } catch (error) {
         console.error('Error submitting booking:', error);
-        alert('Error submitting booking. Please try again.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Confirm Booking';
+        alert('❌ Error submitting booking. Please try again.');
       }
     }
     
