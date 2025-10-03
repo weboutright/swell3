@@ -151,6 +151,12 @@
                 
                 <div class="flex items-center space-x-4">
                     <div class="step-indicator pending" id="step-4-indicator">4</div>
+                    <div class="hidden sm:block text-sm font-semibold text-gray-400">Register</div>
+                </div>
+                <div class="flex-1 h-1 bg-gray-200 mx-4"></div>
+                
+                <div class="flex items-center space-x-4">
+                    <div class="step-indicator pending" id="step-5-indicator">5</div>
                     <div class="hidden sm:block text-sm font-semibold text-gray-400">Done!</div>
                 </div>
             </div>
@@ -446,15 +452,111 @@
                     <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i>
                     Back
                 </button>
-                <button onclick="validateAndContinue()" class="px-8 py-4 premium-gradient text-white rounded-xl font-bold hover:opacity-90 transition-opacity flex items-center">
-                    Verify & Complete Setup
-                    <i data-lucide="check" class="w-5 h-5 ml-2"></i>
+                <button onclick="goToStep(4)" class="px-8 py-4 premium-gradient text-white rounded-xl font-bold hover:opacity-90 transition-opacity flex items-center">
+                    Next: Register Account
+                    <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
                 </button>
             </div>
         </div>
 
-        <!-- Step 4: Success -->
-        <div id="step-4" class="wizard-card rounded-3xl p-12 text-center hidden">
+        <!-- Step 4: Register Account -->
+        <div id="step-4" class="wizard-card rounded-3xl p-12 mb-8 hidden">
+            <div class="mb-8">
+                <div class="flex items-center space-x-4 mb-4">
+                    <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                        <i data-lucide="user-plus" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-black text-gray-900">Step 4: Register Your Account</h2>
+                        <p class="text-gray-600">Connect your Gmail to enable easy sign-in</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6 mb-8">
+                <!-- Critical Warning -->
+                <div class="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl p-6 border-l-4 border-red-400">
+                    <div class="flex items-start space-x-4">
+                        <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600 flex-shrink-0 mt-1"></i>
+                        <div>
+                            <h3 class="font-bold text-gray-900 mb-2">⚠️ CRITICAL: Gmail Must Match!</h3>
+                            <p class="text-gray-700 mb-3">
+                                Enter the <strong>SAME Gmail address</strong> you used to sign into Google when deploying Code.gs.
+                            </p>
+                            <div class="bg-white rounded-lg p-3 text-sm">
+                                <p class="text-gray-600 mb-2"><strong>Why this matters:</strong></p>
+                                <ul class="list-disc list-inside space-y-1 text-gray-600 ml-2">
+                                    <li>Your Code.gs is deployed as "Execute as: User accessing the web app"</li>
+                                    <li>Only YOUR Gmail can access YOUR Code.gs deployment</li>
+                                    <li>If emails don't match, the admin dashboard won't work!</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gmail Input -->
+                <div class="bg-white rounded-2xl p-6 border-2 border-purple-100">
+                    <label class="block font-bold text-gray-900 mb-3 text-lg">
+                        <i data-lucide="mail" class="w-5 h-5 inline mr-2 text-purple-600"></i>
+                        Your Gmail Address
+                    </label>
+                    <input type="email" id="user-gmail" placeholder="your.email@gmail.com" 
+                           class="w-full p-4 border-2 border-gray-200 rounded-xl focus:border-purple-500 focus:outline-none text-lg mb-3"
+                           required>
+                    <p class="text-sm text-gray-600">
+                        📝 This is the Gmail you used to sign into Google Apps Script (look in the top-right of the Apps Script editor)
+                    </p>
+                </div>
+
+                <!-- Deployment URL Confirmation -->
+                <div class="bg-white rounded-2xl p-6 border-2 border-gray-100">
+                    <label class="block font-bold text-gray-900 mb-3 text-lg">
+                        <i data-lucide="link" class="w-5 h-5 inline mr-2 text-blue-600"></i>
+                        Confirm Your Code.gs URL
+                    </label>
+                    <input type="url" id="confirm-url" readonly 
+                           class="w-full p-4 border-2 border-gray-200 rounded-xl bg-gray-50 text-gray-700 text-sm mb-3">
+                    <p class="text-sm text-gray-600">
+                        ✓ This is the URL you pasted in the previous step
+                    </p>
+                </div>
+
+                <!-- What happens next -->
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6">
+                    <h3 class="font-bold text-gray-900 mb-3 flex items-center">
+                        <i data-lucide="info" class="w-5 h-5 mr-2 text-blue-600"></i>
+                        What Happens When You Register
+                    </h3>
+                    <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                        <li>Your Gmail + Code.gs URL are saved to the central database</li>
+                        <li>When you visit the admin dashboard later, you'll sign in with your Gmail</li>
+                        <li>The system looks up your Gmail and loads YOUR specific Code.gs</li>
+                        <li>Because of the "User accessing" setting, only YOU can access your data</li>
+                    </ol>
+                </div>
+
+                <!-- Error Display -->
+                <div id="registration-error" class="hidden bg-red-50 border-l-4 border-red-400 p-4 rounded-lg">
+                    <p class="text-red-800 font-semibold" id="registration-error-text"></p>
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <button onclick="goToStep(3)" class="px-8 py-4 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition-colors flex items-center">
+                    <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i>
+                    Back
+                </button>
+                <button onclick="registerAccount()" id="register-btn" class="px-8 py-4 premium-gradient text-white rounded-xl font-bold hover:opacity-90 transition-opacity flex items-center">
+                    <i data-lucide="user-check" class="w-5 h-5 mr-2"></i>
+                    Register & Complete Setup
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 5: Success -->
+                <!-- Step 5: Success -->
+        <div id="step-5" class="wizard-card rounded-3xl p-12 text-center hidden">
             <div class="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 check-animation">
                 <i data-lucide="check-circle" class="w-12 h-12 text-emerald-600"></i>
             </div>
@@ -605,24 +707,41 @@
         
         function goToStep(step) {
             // Hide all steps
-            for (let i = 1; i <= 4; i++) {
-                document.getElementById(`step-${i}`).classList.add('hidden');
+            for (let i = 1; i <= 5; i++) {
+                const stepElement = document.getElementById(`step-${i}`);
+                if (stepElement) {
+                    stepElement.classList.add('hidden');
+                }
                 const indicator = document.getElementById(`step-${i}-indicator`);
-                indicator.classList.remove('active');
-                if (i < step) {
-                    indicator.classList.remove('pending');
-                    indicator.classList.add('completed');
-                } else if (i === step) {
-                    indicator.classList.remove('pending', 'completed');
-                    indicator.classList.add('active');
-                } else {
-                    indicator.classList.remove('active', 'completed');
-                    indicator.classList.add('pending');
+                if (indicator) {
+                    indicator.classList.remove('active');
+                    if (i < step) {
+                        indicator.classList.remove('pending');
+                        indicator.classList.add('completed');
+                    } else if (i === step) {
+                        indicator.classList.remove('pending', 'completed');
+                        indicator.classList.add('active');
+                    } else {
+                        indicator.classList.remove('active', 'completed');
+                        indicator.classList.add('pending');
+                    }
                 }
             }
             
             // Show current step
-            document.getElementById(`step-${step}`).classList.remove('hidden');
+            const currentStep = document.getElementById(`step-${step}`);
+            if (currentStep) {
+                currentStep.classList.remove('hidden');
+            }
+            
+            // If going to step 4 (registration), copy URL from step 3
+            if (step === 4) {
+                const deploymentUrl = document.getElementById('deployment-url').value.trim();
+                const confirmUrlField = document.getElementById('confirm-url');
+                if (confirmUrlField && deploymentUrl) {
+                    confirmUrlField.value = deploymentUrl;
+                }
+            }
             
             // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -659,8 +778,106 @@
             
             showNotification('✅ Deployment URL saved!', 'success');
             
-            // Go straight to completion step
+            // Go to step 4 (registration)
             goToStep(4);
+        }
+        
+        async function registerAccount() {
+            const gmail = document.getElementById('user-gmail').value.trim();
+            const codeGsUrl = document.getElementById('confirm-url').value.trim();
+            const errorDiv = document.getElementById('registration-error');
+            
+            // Clear previous errors
+            errorDiv.classList.add('hidden');
+            errorDiv.textContent = '';
+            
+            // Validate Gmail
+            if (!gmail) {
+                errorDiv.textContent = '❌ Please enter your Gmail address';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            
+            // Validate Gmail format
+            const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+            if (!gmailRegex.test(gmail)) {
+                errorDiv.textContent = '❌ Please enter a valid Gmail address (must end with @gmail.com)';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            
+            // Validate Code.gs URL
+            if (!codeGsUrl) {
+                errorDiv.textContent = '❌ Code.gs URL is missing. Please go back to Step 3 and paste your deployment URL.';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+            
+            // TODO: Replace this with your actual CODE2.gs URL
+            const AUTH_HUB_URL = 'YOUR_CODE2_GS_URL_HERE';
+            
+            if (AUTH_HUB_URL === 'YOUR_CODE2_GS_URL_HERE' || !AUTH_HUB_URL) {
+                errorDiv.innerHTML = '⚠️ Registration service not configured yet.<br>For now, skip to the next step and use your deployment URL directly.';
+                errorDiv.classList.remove('hidden');
+                
+                // Allow them to continue anyway
+                setTimeout(() => {
+                    goToStep(5);
+                }, 3000);
+                return;
+            }
+            
+            // Show loading state
+            const registerBtn = document.querySelector('#step-4 button[onclick="registerAccount()"]');
+            const originalBtnText = registerBtn.innerHTML;
+            registerBtn.disabled = true;
+            registerBtn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 mr-2 animate-spin"></i>Registering...';
+            lucide.createIcons();
+            
+            try {
+                // POST registration to CODE2.gs
+                const response = await fetch(AUTH_HUB_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: 'register',
+                        gmail: gmail,
+                        codeGsUrl: codeGsUrl
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification('✅ Account registered successfully!', 'success');
+                    
+                    // Store Gmail for later use
+                    localStorage.setItem('swell_user_gmail', gmail);
+                    
+                    // Go to success page
+                    goToStep(5);
+                } else {
+                    // Show error
+                    errorDiv.textContent = `❌ Registration failed: ${result.error || 'Unknown error'}`;
+                    errorDiv.classList.remove('hidden');
+                    
+                    // Reset button
+                    registerBtn.disabled = false;
+                    registerBtn.innerHTML = originalBtnText;
+                    lucide.createIcons();
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                errorDiv.textContent = `❌ Registration failed: ${error.message}. Please check your internet connection and try again.`;
+                errorDiv.classList.remove('hidden');
+                
+                // Reset button
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = originalBtnText;
+                lucide.createIcons();
+            }
         }
         
         async function testDeployment() {
