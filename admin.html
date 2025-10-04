@@ -1284,10 +1284,10 @@
             }
             
             try {
-                // Build URL with Gmail parameter
-                let url = `${GOOGLE_SCRIPT_URL}?action=getUserDataByGmail&email=${encodeURIComponent(gmail)}`;
+                // Build URL with Gmail parameter for getUserData endpoint
+                let url = `${GOOGLE_SCRIPT_URL}?action=getUserData&gmail=${encodeURIComponent(gmail)}`;
                 if (apiKey) {
-                    url += `&apiKey=${encodeURIComponent(apiKey)}`;
+                    url += `&storeApiKey=${encodeURIComponent(apiKey)}`;
                 }
                 
                 console.log('🔍 Fetching user data with Gmail:', gmail);
