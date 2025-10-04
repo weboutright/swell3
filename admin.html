@@ -228,7 +228,7 @@
 
             <!-- User Info -->
             <div class="absolute bottom-6 left-6 right-6">
-                <div class="bg-white/10 rounded-xl p-4">
+                <div class="bg-white/10 rounded-xl p-4 mb-3">
                     <div class="flex items-center">
                         <img id="user-avatar" src="" alt="User" class="w-10 h-10 rounded-full mr-3 border-2 border-white/30" style="display: none;">
                         <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3" id="user-avatar-placeholder">
@@ -240,6 +240,10 @@
                         </div>
                     </div>
                 </div>
+                <button onclick="handleLogout()" class="w-full bg-white/5 hover:bg-white/10 border border-white/20 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center justify-center">
+                    <i data-lucide="log-out" class="w-4 h-4 mr-2"></i>
+                    Sign Out
+                </button>
             </div>
         </div>
 
@@ -1101,28 +1105,53 @@
                 }
                 console.log('✅ Google Script URL found:', GOOGLE_SCRIPT_URL);
 
-                // Step 2: Get the session token for the user's backend.
-                const token = getSessionFromHash();
-                if (!token) {
-                    // If we have the script URL but no token, the user needs to log in to their backend.
-                    // The Code.gs doGet() will serve the Google Sign-In page.
-                    console.log("No session token found. Redirecting to personal login page.");
-                    window.location.href = GOOGLE_SCRIPT_URL;
-                    return; // Stop execution
-                }
-                console.log('✅ Session token found.');
-
-                // Step 3: We have the URL and a token. Fetch the user's data.
-                const userDataLoaded = await fetchUserData(token);
-                if (!userDataLoaded) {
-                    // The token might be expired or invalid.
-                    console.error("Failed to fetch user data. Token may be invalid. Redirecting to re-authenticate.");
-                    window.location.href = GOOGLE_SCRIPT_URL; // Re-login
-                    return;
+                // Step 2: Get Gmail and API key from URL params (from login flow)
+                const urlParams = new URLSearchParams(window.location.search);
+                const gmail = urlParams.get('gmail');
+                const apiKey = urlParams.get('apiKey');
+                
+                // Step 3: Authenticate with the user's Code.gs backend using Gmail
+                if (gmail) {
+                    console.log('✅ Gmail found from login:', gmail);
+                    // Store Gmail for future use
+                    localStorage.setItem('user_gmail', gmail);
+                    if (apiKey) {
+                        localStorage.setItem('user_api_key', apiKey);
+                    }
+                    
+                    // Fetch user data using Gmail authentication
+                    const userDataLoaded = await fetchUserDataByGmail(gmail, apiKey);
+                    if (!userDataLoaded) {
+                        console.error("Failed to fetch user data with Gmail. Redirecting to login.");
+                        window.location.href = 'https://weboutright.github.io/swell3';
+                        return;
+                    }
+                } else {
+                    // Try to get Gmail from localStorage (returning user)
+                    const storedGmail = localStorage.getItem('user_gmail');
+                    const storedApiKey = localStorage.getItem('user_api_key');
+                    
+                    if (storedGmail) {
+                        console.log('✅ Using stored Gmail:', storedGmail);
+                        const userDataLoaded = await fetchUserDataByGmail(storedGmail, storedApiKey);
+                        if (!userDataLoaded) {
+                            console.error("Failed to fetch user data. Clearing session and redirecting to login.");
+                            localStorage.removeItem('user_gmail');
+                            localStorage.removeItem('user_api_key');
+                            window.location.href = 'https://weboutright.github.io/swell3';
+                            return;
+                        }
+                    } else {
+                        console.error("No Gmail found. Redirecting to login.");
+                        window.location.href = 'https://weboutright.github.io/swell3';
+                        return;
+                    }
                 }
 
                 // Step 4: Success! Initialize the dashboard.
                 console.log('✅ Initialization successful. Loading admin panel.');
+                // Clean up URL params for better UX
+                window.history.replaceState({}, document.title, window.location.pathname);
                 initializeAllSections();
                 updateEmbedCodes(true); // Silently update embed codes on initial load
 
@@ -1215,9 +1244,14 @@
             }
             
             try {
+                // Use stored token OR Gmail for authentication
+                const token = window.USER_DATA.token || getSessionFromHash();
+                const gmail = window.USER_DATA.user?.email || localStorage.getItem('user_gmail');
+                
                 const body = {
-                    token: getSessionFromHash(), // Always get the latest token
                     action: action,
+                    ...(token && { token }),
+                    ...(gmail && !token && { gmail }),
                     ...payload
                 };
                 
@@ -1240,6 +1274,49 @@
                 console.error(`API Call failed (${action}):`, error);
                 showNotification('An unexpected error occurred. Check console.', 'error');
                 return { success: false, error: error.toString() };
+            }
+        }
+        
+        async function fetchUserDataByGmail(gmail, apiKey = null) {
+            if (!gmail) {
+                console.error('Gmail is required for fetchUserDataByGmail.');
+                return false;
+            }
+            
+            try {
+                // Build URL with Gmail parameter
+                let url = `${GOOGLE_SCRIPT_URL}?action=getUserDataByGmail&email=${encodeURIComponent(gmail)}`;
+                if (apiKey) {
+                    url += `&apiKey=${encodeURIComponent(apiKey)}`;
+                }
+                
+                console.log('🔍 Fetching user data with Gmail:', gmail);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    redirect: 'follow'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.USER_DATA = {
+                        user: result.user,
+                        config: result.config,
+                        token: result.token,
+                        exp: result.exp
+                    };
+                    console.log('✅ User data loaded successfully');
+                    console.log('   Email:', result.user.email);
+                    console.log('   Name:', result.user.name);
+                    return true;
+                } else {
+                    console.error('Failed to load user data:', result.error);
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error fetching user data by Gmail:', error);
+                return false;
             }
         }
         
@@ -1304,6 +1381,28 @@
                 return token;
             }
             return localStorage.getItem('session_token');
+        }
+        
+        function handleLogout() {
+            // Clear all stored authentication data
+            localStorage.removeItem('user_gmail');
+            localStorage.removeItem('user_api_key');
+            localStorage.removeItem('session_token');
+            localStorage.removeItem('google_script_url');
+            
+            // Clear global user data
+            window.USER_DATA = {
+                user: null,
+                config: null,
+                token: null,
+                exp: null
+            };
+            
+            // Show notification and redirect
+            showNotification('Signing out...', 'info');
+            setTimeout(() => {
+                window.location.href = 'https://weboutright.github.io/swell3';
+            }, 1000);
         }
         
         // ========================================================================

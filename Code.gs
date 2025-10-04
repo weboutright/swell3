@@ -834,11 +834,27 @@ function getCurrentSession() {
 
 function resolveUserEmail(data) {
   const session = getCurrentSession();
-  if (session.isAuthenticated) return session.email;
+  if (session.isAuthenticated) {
+    // SECURITY CHECK: Verify the authenticated user is the script owner
+    const ownerEmail = Session.getEffectiveUser().getEmail();
+    if (session.email.toLowerCase() !== ownerEmail.toLowerCase()) {
+      Logger.log('❌ SECURITY: Session email (' + session.email + ') does not match owner (' + ownerEmail + ')');
+      return null;
+    }
+    return session.email;
+  }
   
   if (data && data.token) {
     const result = verifyToken(data.token);
-    if (result.email) return result.email;
+    if (result.email) {
+      // SECURITY CHECK: Verify the token email is the script owner
+      const ownerEmail = Session.getEffectiveUser().getEmail();
+      if (result.email.toLowerCase() !== ownerEmail.toLowerCase()) {
+        Logger.log('❌ SECURITY: Token email (' + result.email + ') does not match owner (' + ownerEmail + ')');
+        return null;
+      }
+      return result.email;
+    }
   }
   
   return null;
@@ -963,11 +979,26 @@ function getUserData(token) {
 /**
  * Simplified getUserData that accepts Gmail directly (no token required)
  * Used when CODE2.gs redirects with Gmail parameter
+ * SECURITY: Only allows access if email matches the owner who deployed this script
  * @param {string} email - User's email address
  * @param {string} apiKeyToStore - Optional API key to store for this user
  */
 function getUserDataByGmail(email, apiKeyToStore) {
   try {
+    // SECURITY CHECK: Get the email of the person who deployed this script
+    const ownerEmail = Session.getEffectiveUser().getEmail();
+    
+    // CRITICAL: Only allow access if the requested email matches the script owner
+    if (email.toLowerCase() !== ownerEmail.toLowerCase()) {
+      Logger.log('❌ SECURITY: Access denied. Requested email (' + email + ') does not match owner (' + ownerEmail + ')');
+      return jsonResponse({ 
+        success: false, 
+        error: 'Access denied. This admin panel can only be accessed by ' + ownerEmail 
+      }, 403);
+    }
+    
+    Logger.log('✅ SECURITY: Email verified as owner: ' + email);
+    
     // Auto-initialize user if they don't exist
     const userEmail = USER_PROPERTIES.getProperty(USER_CONFIG_KEYS.USER_EMAIL);
     
@@ -978,7 +1009,8 @@ function getUserDataByGmail(email, apiKeyToStore) {
     }
     
     if (!userEmail) {
-      // Initialize new user
+      // Initialize new user (only happens on first access)
+      Logger.log('🆕 Initializing new user: ' + email);
       USER_PROPERTIES.setProperties({
         [USER_CONFIG_KEYS.USER_EMAIL]: email,
         [USER_CONFIG_KEYS.CREATED_AT]: new Date().toISOString(),
